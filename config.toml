@@ -1,3 +1,8 @@
-languageCode = "en-us"
-title = "My New Hugo Site"
 baseurl = "http://example.org/"
+languageCode = "en-us"
+title = "钱国正博客"
+theme = "hyde"
+[params]
+    themeColor = "theme-base-08"
+    layoutReverse = true
+    disqusShortname = "spf13"
