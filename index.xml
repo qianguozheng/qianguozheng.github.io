@@ -11,10 +11,10 @@
     
     <item>
       <title>golang recover usage</title>
-      <link>https://qianguozheng.github.io/golang-recover-usage/</link>
+      <link>https://qianguozheng.github.io/post/golang-recover-usage/</link>
       <pubDate>Mon, 16 Jan 2017 15:56:55 +0800</pubDate>
       
-      <guid>https://qianguozheng.github.io/golang-recover-usage/</guid>
+      <guid>https://qianguozheng.github.io/post/golang-recover-usage/</guid>
       <description>&lt;p&gt;#Golang panic recover usage&lt;/p&gt;
 
 &lt;p&gt;###Brief Introduction
@@ -77,6 +77,18 @@ func main() {
 }
 
 &lt;/code&gt;&lt;/pre&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>welcome</title>
+      <link>https://qianguozheng.github.io/post/welcome/</link>
+      <pubDate>Sun, 15 Jan 2017 23:35:16 +0800</pubDate>
+      
+      <guid>https://qianguozheng.github.io/post/welcome/</guid>
+      <description>
+
+&lt;h1 id=&#34;welcome-to-qianguozheng-tech-blog:2cc7dc244eed4480e8b46c91e911e96b&#34;&gt;welcome to qianguozheng tech blog.&lt;/h1&gt;
 </description>
     </item>
     

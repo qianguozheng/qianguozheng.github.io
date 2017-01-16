@@ -8,8 +8,13 @@
   </url>
   
   <url>
-    <loc>https://qianguozheng.github.io/golang-recover-usage/</loc>
+    <loc>https://qianguozheng.github.io/post/golang-recover-usage/</loc>
     <lastmod>2017-01-16T15:56:55+08:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://qianguozheng.github.io/post/welcome/</loc>
+    <lastmod>2017-01-15T23:35:16+08:00</lastmod>
   </url>
   
 </urlset>

@@ -6,8 +6,79 @@
     <description>Recent content in Posts on 钱国正博客</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Sun, 15 Jan 2017 23:35:16 +0800</lastBuildDate>
+    <lastBuildDate>Mon, 16 Jan 2017 15:56:55 +0800</lastBuildDate>
     <atom:link href="https://qianguozheng.github.io/post/index.xml" rel="self" type="application/rss+xml" />
+    
+    <item>
+      <title>golang recover usage</title>
+      <link>https://qianguozheng.github.io/post/golang-recover-usage/</link>
+      <pubDate>Mon, 16 Jan 2017 15:56:55 +0800</pubDate>
+      
+      <guid>https://qianguozheng.github.io/post/golang-recover-usage/</guid>
+      <description>&lt;p&gt;#Golang panic recover usage&lt;/p&gt;
+
+&lt;p&gt;###Brief Introduction
+In golang, some abnormal case would cause program crash, but if you want it recover, you need to handle it by hand.&lt;/p&gt;
+
+&lt;p&gt;Below is the simple example of http function use recover to recover from panic caused by peer-end server crash.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;package main
+
+import (
+	&amp;quot;errors&amp;quot;
+	&amp;quot;fmt&amp;quot;
+	&amp;quot;net/http&amp;quot;
+	&amp;quot;strings&amp;quot;
+	&amp;quot;time&amp;quot;
+)
+
+var err error
+
+func httppost() {
+	for {
+		fmt.Println(&amp;quot;Cycle...&amp;quot;)
+		defer func() {
+
+			if r := recover(); r != nil {
+
+				fmt.Println(&amp;quot;Recovered in testPanic2Error&amp;quot;, r)
+
+				//check exactly what the panic was and create error.
+				switch x := r.(type) {
+				case string:
+					err = errors.New(x)
+				case error:
+					err = x
+				default:
+					err = errors.New(&amp;quot;Unknow panic&amp;quot;)
+				}
+			}
+			fmt.Println(err)
+			httppost()
+
+		}()
+		resp, err := http.Post(&amp;quot;http://127.0.0.1/v3/api/device/vpn&amp;quot;,
+			&amp;quot;application/x-www-form-urlencoded&amp;quot;,
+			strings.NewReader(&amp;quot;name=qgz&amp;quot;))
+
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		resp.Body.Close()
+
+		time.Sleep(time.Second * 5)
+		fmt.Println(&amp;quot;Cycle...&amp;quot;)
+	}
+}
+
+func main() {
+	httppost()
+}
+
+&lt;/code&gt;&lt;/pre&gt;
+</description>
+    </item>
     
     <item>
       <title>welcome</title>
