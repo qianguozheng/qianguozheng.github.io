@@ -25,7 +25,7 @@
 
 &lt;p&gt;Below is the simple example of http function use recover to recover from panic caused by peer-end server crash.&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;package main
+&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;package main
 
 import (
 	&amp;quot;errors&amp;quot;
