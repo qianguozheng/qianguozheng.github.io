@@ -28,55 +28,55 @@
 &lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;package main
 
 import (
-	&amp;quot;errors&amp;quot;
-	&amp;quot;fmt&amp;quot;
-	&amp;quot;net/http&amp;quot;
-	&amp;quot;strings&amp;quot;
-	&amp;quot;time&amp;quot;
+    &amp;quot;errors&amp;quot;
+    &amp;quot;fmt&amp;quot;
+    &amp;quot;net/http&amp;quot;
+    &amp;quot;strings&amp;quot;
+    &amp;quot;time&amp;quot;
 )
 
 var err error
 
 func httppost() {
-	for {
-		fmt.Println(&amp;quot;Cycle...&amp;quot;)
-		defer func() {
+    for {
+        fmt.Println(&amp;quot;Cycle...&amp;quot;)
+        defer func() {
 
-			if r := recover(); r != nil {
+            if r := recover(); r != nil {
 
-				fmt.Println(&amp;quot;Recovered in testPanic2Error&amp;quot;, r)
+                fmt.Println(&amp;quot;Recovered in testPanic2Error&amp;quot;, r)
 
-				//check exactly what the panic was and create error.
-				switch x := r.(type) {
-				case string:
-					err = errors.New(x)
-				case error:
-					err = x
-				default:
-					err = errors.New(&amp;quot;Unknow panic&amp;quot;)
-				}
-			}
-			fmt.Println(err)
-			httppost()
+                //check exactly what the panic was and create error.
+                switch x := r.(type) {
+                case string:
+                    err = errors.New(x)
+                case error:
+                    err = x
+                default:
+                    err = errors.New(&amp;quot;Unknow panic&amp;quot;)
+                }
+            }
+            fmt.Println(err)
+            httppost()
 
-		}()
-		resp, err := http.Post(&amp;quot;http://127.0.0.1/v3/api/device/vpn&amp;quot;,
-			&amp;quot;application/x-www-form-urlencoded&amp;quot;,
-			strings.NewReader(&amp;quot;name=qgz&amp;quot;))
+        }()
+        resp, err := http.Post(&amp;quot;http://127.0.0.1/v3/api/device/vpn&amp;quot;,
+            &amp;quot;application/x-www-form-urlencoded&amp;quot;,
+            strings.NewReader(&amp;quot;name=qgz&amp;quot;))
 
-		if err != nil {
-			fmt.Println(err)
-		}
+        if err != nil {
+            fmt.Println(err)
+        }
 
-		resp.Body.Close()
+        resp.Body.Close()
 
-		time.Sleep(time.Second * 5)
-		fmt.Println(&amp;quot;Cycle...&amp;quot;)
-	}
+        time.Sleep(time.Second * 5)
+        fmt.Println(&amp;quot;Cycle...&amp;quot;)
+    }
 }
 
 func main() {
-	httppost()
+    httppost()
 }
 
 &lt;/code&gt;&lt;/pre&gt;

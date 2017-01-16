@@ -75,55 +75,55 @@
 <pre><code class="language-go">package main
 
 import (
-	&quot;errors&quot;
-	&quot;fmt&quot;
-	&quot;net/http&quot;
-	&quot;strings&quot;
-	&quot;time&quot;
+    &quot;errors&quot;
+    &quot;fmt&quot;
+    &quot;net/http&quot;
+    &quot;strings&quot;
+    &quot;time&quot;
 )
 
 var err error
 
 func httppost() {
-	for {
-		fmt.Println(&quot;Cycle...&quot;)
-		defer func() {
+    for {
+        fmt.Println(&quot;Cycle...&quot;)
+        defer func() {
 
-			if r := recover(); r != nil {
+            if r := recover(); r != nil {
 
-				fmt.Println(&quot;Recovered in testPanic2Error&quot;, r)
+                fmt.Println(&quot;Recovered in testPanic2Error&quot;, r)
 
-				//check exactly what the panic was and create error.
-				switch x := r.(type) {
-				case string:
-					err = errors.New(x)
-				case error:
-					err = x
-				default:
-					err = errors.New(&quot;Unknow panic&quot;)
-				}
-			}
-			fmt.Println(err)
-			httppost()
+                //check exactly what the panic was and create error.
+                switch x := r.(type) {
+                case string:
+                    err = errors.New(x)
+                case error:
+                    err = x
+                default:
+                    err = errors.New(&quot;Unknow panic&quot;)
+                }
+            }
+            fmt.Println(err)
+            httppost()
 
-		}()
-		resp, err := http.Post(&quot;http://127.0.0.1/v3/api/device/vpn&quot;,
-			&quot;application/x-www-form-urlencoded&quot;,
-			strings.NewReader(&quot;name=qgz&quot;))
+        }()
+        resp, err := http.Post(&quot;http://127.0.0.1/v3/api/device/vpn&quot;,
+            &quot;application/x-www-form-urlencoded&quot;,
+            strings.NewReader(&quot;name=qgz&quot;))
 
-		if err != nil {
-			fmt.Println(err)
-		}
+        if err != nil {
+            fmt.Println(err)
+        }
 
-		resp.Body.Close()
+        resp.Body.Close()
 
-		time.Sleep(time.Second * 5)
-		fmt.Println(&quot;Cycle...&quot;)
-	}
+        time.Sleep(time.Second * 5)
+        fmt.Println(&quot;Cycle...&quot;)
+    }
 }
 
 func main() {
-	httppost()
+    httppost()
 }
 
 </code></pre>
