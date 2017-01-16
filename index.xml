@@ -2,11 +2,11 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>钱国正博客</title>
-    <link>http://example.org/</link>
+    <link>https://qianguozheng.github.io/</link>
     <description>Recent content on 钱国正博客</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <atom:link href="http://example.org/index.xml" rel="self" type="application/rss+xml" />
+    <atom:link href="https://qianguozheng.github.io/index.xml" rel="self" type="application/rss+xml" />
     
   </channel>
 </rss>
