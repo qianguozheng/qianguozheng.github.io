@@ -15,10 +15,13 @@
       <pubDate>Mon, 16 Jan 2017 15:56:55 +0800</pubDate>
       
       <guid>https://qianguozheng.github.io/post/golang-recover-usage/</guid>
-      <description>&lt;p&gt;#Golang panic recover usage&lt;/p&gt;
+      <description>
 
-&lt;p&gt;###Brief Introduction
-In golang, some abnormal case would cause program crash, but if you want it recover, you need to handle it by hand.&lt;/p&gt;
+&lt;h1 id=&#34;golang-panic-recover-usage:16ec7c3f34a3be91401b2941be898583&#34;&gt;Golang panic recover usage&lt;/h1&gt;
+
+&lt;h3 id=&#34;brief-introduction:16ec7c3f34a3be91401b2941be898583&#34;&gt;Brief Introduction&lt;/h3&gt;
+
+&lt;p&gt;In golang, some abnormal case would cause program crash, but if you want it recover, you need to handle it by hand.&lt;/p&gt;
 
 &lt;p&gt;Below is the simple example of http function use recover to recover from panic caused by peer-end server crash.&lt;/p&gt;
 
