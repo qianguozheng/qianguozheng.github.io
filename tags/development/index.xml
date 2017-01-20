@@ -6,20 +6,133 @@
     <description>Recent content in Development on 钱国正博客</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Mon, 16 Jan 2017 15:56:55 +0800</lastBuildDate>
+    <lastBuildDate>Fri, 20 Jan 2017 10:09:56 +0800</lastBuildDate>
     <atom:link href="https://qianguozheng.github.io/tags/development/index.xml" rel="self" type="application/rss+xml" />
     
     <item>
-      <title>golang recover usage</title>
-      <link>https://qianguozheng.github.io/post/golang-recover-usage/</link>
-      <pubDate>Mon, 16 Jan 2017 15:56:55 +0800</pubDate>
+      <title>Golang introducing HTTP tracing</title>
+      <link>https://qianguozheng.github.io/post/Golang-introducing-HTTP-tracing/</link>
+      <pubDate>Fri, 20 Jan 2017 10:09:56 +0800</pubDate>
       
-      <guid>https://qianguozheng.github.io/post/golang-recover-usage/</guid>
+      <guid>https://qianguozheng.github.io/post/Golang-introducing-HTTP-tracing/</guid>
       <description>
 
-&lt;h1 id=&#34;golang-panic-recover-usage:16ec7c3f34a3be91401b2941be898583&#34;&gt;Golang panic recover usage&lt;/h1&gt;
+&lt;h1 id=&#34;介绍:4ce321d90e539aeedd18dbea4986007d&#34;&gt;介绍&lt;/h1&gt;
 
-&lt;h3 id=&#34;brief-introduction:16ec7c3f34a3be91401b2941be898583&#34;&gt;Brief Introduction&lt;/h3&gt;
+&lt;p&gt;在Go 1.7我们引入了HTTP跟踪， 用来收集HTTP客户端请求生命周期中详细信息的工作。包在net/http/httptrace. 手机的信息可以用来调试延时问题，服务监控，写适配系统等。&lt;/p&gt;
+
+&lt;h1 id=&#34;http-事件:4ce321d90e539aeedd18dbea4986007d&#34;&gt;HTTP 事件&lt;/h1&gt;
+
+&lt;p&gt;httptrace包提供了许多钩子在HTTP生命周期中收集信息。这些事件包括：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;Connection creation&lt;/li&gt;
+&lt;li&gt;Connection reuse&lt;/li&gt;
+&lt;li&gt;DNS lookups&lt;/li&gt;
+&lt;li&gt;Writing the request to the wire&lt;/li&gt;
+&lt;li&gt;Reading the response&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h1 id=&#34;跟踪事件:4ce321d90e539aeedd18dbea4986007d&#34;&gt;跟踪事件&lt;/h1&gt;
+
+&lt;p&gt;你可以通过放置一个*httptrace.ClientTrace 包含钩子函数在请求的context.Context中来开启http追踪。各种http.RoundTripper实现通过查找上下文的 *httptrace.ClientTrace和调用相关的钩子函数来汇报内部事件&lt;/p&gt;
+
+&lt;p&gt;最终作用于请求的上下文，用户应该将一个 *httptrace.ClientTrace防到请求的上下文在开始请求之前。&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-golang&#34;&gt;    req, _ := http.NewRequest(&amp;quot;GET&amp;quot;, &amp;quot;http://example.com&amp;quot;, nil)
+    trace := &amp;amp;httptrace.ClientTrace{
+        DNSDone: func(dnsInfo httptrace.DNSDoneInfo) {
+            fmt.Printf(&amp;quot;DNS Info: %+v\n&amp;quot;, dnsInfo)
+        },
+        GotConn: func(connInfo httptrace.GotConnInfo) {
+            fmt.Printf(&amp;quot;Got Conn: %+v\n&amp;quot;, connInfo)
+        },
+    }
+    req = req.WithContext(httptrace.WithClientTrace(req.Context(), trace))
+    if _, err := http.DefaultTransport.RoundTrip(req); err != nil {
+        log.Fatal(err)
+    }
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;在请求流程中，http.DefaultTransport会在事件发生时出发钩子。上面的程序会打印DNS信息当DNS查询完成时。同样的会打印连接信息当链接与请求主机建立连接时&lt;/p&gt;
+
+&lt;h1 id=&#34;使用http-client跟踪:4ce321d90e539aeedd18dbea4986007d&#34;&gt;使用http.Client跟踪&lt;/h1&gt;
+
+&lt;p&gt;跟踪机制设计用来跟踪单个的http.Transport.RoundTrip的声明周期事件。然而，一个客户端可以发起多个round trips来完成HTTP请求。例如，URL重定向，注册的钩子被调用多次当客户端跟踪HTTP重定向，发起多个请求。用户负责识别类似的事件在http.CLient中。下面的程序识别通过httpRoundTripper包裹识别当前的请求。&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;package main
+
+import (
+    &amp;quot;fmt&amp;quot;
+    &amp;quot;log&amp;quot;
+    &amp;quot;net/http&amp;quot;
+    &amp;quot;net/http/httptrace&amp;quot;
+)
+
+// transport is an http.RoundTripper that keeps track of the in-flight
+// request and implements hooks to report HTTP tracing events.
+type transport struct {
+    current *http.Request
+}
+
+// RoundTrip wraps http.DefaultTransport.RoundTrip to keep track
+// of the current request.
+func (t *transport) RoundTrip(req *http.Request) (*http.Response, error) {
+    t.current = req
+    return http.DefaultTransport.RoundTrip(req)
+}
+
+// GotConn prints whether the connection has been used previously
+// for the current request.
+func (t *transport) GotConn(info httptrace.GotConnInfo) {
+    fmt.Printf(&amp;quot;Connection reused for %v? %v\n&amp;quot;, t.current.URL, info.Reused)
+}
+
+func main() {
+    t := &amp;amp;transport{}
+
+    req, _ := http.NewRequest(&amp;quot;GET&amp;quot;, &amp;quot;https://google.com&amp;quot;, nil)
+    trace := &amp;amp;httptrace.ClientTrace{
+        GotConn: t.GotConn,
+    }
+    req = req.WithContext(httptrace.WithClientTrace(req.Context(), trace))
+
+    client := &amp;amp;http.Client{Transport: t}
+    if _, err := client.Do(req); err != nil {
+        log.Fatal(err)
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;程序将会跟踪重定向google.com 到www.google.com并打印如下：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;Connection reused for https://google.com? false
+Connection reused for https://www.google.com/? false
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;传输在net/http包支持跟踪http/1和http/2&lt;/p&gt;
+
+&lt;p&gt;如果你是一个定制的http.RoundTripper实现作者，你可以通过检查请求上下文并在相应的事件发生时触发钩子函数&lt;/p&gt;
+
+&lt;h1 id=&#34;结论:4ce321d90e539aeedd18dbea4986007d&#34;&gt;结论&lt;/h1&gt;
+
+&lt;p&gt;GO的HTTP跟踪对于那些感兴趣调试HTTP请求延时和些网络外部负载调试工具时。 通过开启这个功能，我们希望可以看到HTTP调试，性能。可视化工具来自社区例如httpstat.&lt;/p&gt;
+
+&lt;p&gt;By Jaana Burcu Dogan&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Golang recover usage</title>
+      <link>https://qianguozheng.github.io/post/Golang-recover-usage/</link>
+      <pubDate>Mon, 16 Jan 2017 15:56:55 +0800</pubDate>
+      
+      <guid>https://qianguozheng.github.io/post/Golang-recover-usage/</guid>
+      <description>
+
+&lt;h1 id=&#34;golang-panic-recover-usage:4cee95b6a0f7ad978328106e5f21d269&#34;&gt;Golang panic recover usage&lt;/h1&gt;
+
+&lt;h3 id=&#34;brief-introduction:4cee95b6a0f7ad978328106e5f21d269&#34;&gt;Brief Introduction&lt;/h3&gt;
 
 &lt;p&gt;In golang, some abnormal case would cause program crash, but if you want it recover, you need to handle it by hand.&lt;/p&gt;
 

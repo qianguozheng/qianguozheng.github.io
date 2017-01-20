@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+	<!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-us" lang="en-us">
 <head>
   <link href="http://gmpg.org/xfn/11" rel="profile">
@@ -9,7 +9,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
 
   
-  <title>钱国正博客</title>
+  <title>Golang introducing HTTP tracing &middot; 钱国正博客</title>
   
 
 <link rel="stylesheet" href="/css/monokai.css">
@@ -27,12 +27,11 @@
   <link rel="shortcut icon" href="/favicon.png">
 
   
-  <link href="https://qianguozheng.github.io/index.xml" rel="alternate" type="application/rss+xml" title="钱国正博客" />
+  <link href="" rel="alternate" type="application/rss+xml" title="钱国正博客" />
 </head>
 
-<body class="theme-base-08 ">
-
-<div class="sidebar">
+	<body class="theme-base-08 ">
+		<div class="sidebar">
   <div class="container sidebar-sticky">
     <div class="sidebar-about">
       <a href="https://qianguozheng.github.io/"><h1>钱国正博客</h1></a>
@@ -55,20 +54,11 @@
 </div>
 
 
-    <div class="content container">
-<div class="posts">
-
-      
-  <div class="post">
-    <h1 class="post-title">
-      <a href="https://qianguozheng.github.io/post/Golang-introducing-HTTP-tracing/">
-        Golang introducing HTTP tracing
-      </a>
-    </h1>
-
-    <span class="post-date">Fri, Jan 20, 2017</span>
-
-    
+		<div class="content container">
+			<div class="post">
+			 	<h1>Golang introducing HTTP tracing</h1>
+			  <span class="post-date">Fri, Jan 20, 2017</span>
+			      
 
 <h1 id="介绍:4ce321d90e539aeedd18dbea4986007d">介绍</h1>
 
@@ -173,102 +163,26 @@ Connection reused for https://www.google.com/? false
 
 <p>By Jaana Burcu Dogan</p>
 
-  </div>
-  
-  <div class="post">
-    <h1 class="post-title">
-      <a href="https://qianguozheng.github.io/post/Golang-recover-usage/">
-        Golang recover usage
-      </a>
-    </h1>
+			</div>
 
-    <span class="post-date">Mon, Jan 16, 2017</span>
+			
+				<h2>Comments</h2>
+				<div id="disqus_thread"></div>
+<script type="text/javascript">
+     
+    var disqus_shortname = 'spf13'; 
 
-    
-
-<h1 id="golang-panic-recover-usage:4cee95b6a0f7ad978328106e5f21d269">Golang panic recover usage</h1>
-
-<h3 id="brief-introduction:4cee95b6a0f7ad978328106e5f21d269">Brief Introduction</h3>
-
-<p>In golang, some abnormal case would cause program crash, but if you want it recover, you need to handle it by hand.</p>
-
-<p>Below is the simple example of http function use recover to recover from panic caused by peer-end server crash.</p>
-
-<pre><code class="language-go">package main
-
-import (
-    &quot;errors&quot;
-    &quot;fmt&quot;
-    &quot;net/http&quot;
-    &quot;strings&quot;
-    &quot;time&quot;
-)
-
-var err error
-
-func httppost() {
-    for {
-        fmt.Println(&quot;Cycle...&quot;)
-        defer func() {
-
-            if r := recover(); r != nil {
-
-                fmt.Println(&quot;Recovered in testPanic2Error&quot;, r)
-
-                //check exactly what the panic was and create error.
-                switch x := r.(type) {
-                case string:
-                    err = errors.New(x)
-                case error:
-                    err = x
-                default:
-                    err = errors.New(&quot;Unknow panic&quot;)
-                }
-            }
-            fmt.Println(err)
-            httppost()
-
-        }()
-        resp, err := http.Post(&quot;http://127.0.0.1/v3/api/device/vpn&quot;,
-            &quot;application/x-www-form-urlencoded&quot;,
-            strings.NewReader(&quot;name=qgz&quot;))
-
-        if err != nil {
-            fmt.Println(err)
-        }
-
-        resp.Body.Close()
-
-        time.Sleep(time.Second * 5)
-        fmt.Println(&quot;Cycle...&quot;)
-    }
-}
-
-func main() {
-    httppost()
-}
-
-</code></pre>
-
-  </div>
-  
-  <div class="post">
-    <h1 class="post-title">
-      <a href="https://qianguozheng.github.io/post/welcome/">
-        welcome
-      </a>
-    </h1>
-
-    <span class="post-date">Sun, Jan 15, 2017</span>
-
-    
-
-<h1 id="welcome-to-qianguozheng-tech-blog:2cc7dc244eed4480e8b46c91e911e96b">welcome to qianguozheng tech blog.</h1>
-
-  </div>
-  
+     
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
 </div>
-</div>
+			
+		</div>
 
   </body>
 </html>

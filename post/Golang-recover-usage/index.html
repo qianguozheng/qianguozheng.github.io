@@ -9,7 +9,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
 
   
-  <title>welcome &middot; 钱国正博客</title>
+  <title>Golang recover usage &middot; 钱国正博客</title>
   
 
 <link rel="stylesheet" href="/css/monokai.css">
@@ -56,11 +56,73 @@
 
 		<div class="content container">
 			<div class="post">
-			 	<h1>welcome</h1>
-			  <span class="post-date">Sun, Jan 15, 2017</span>
+			 	<h1>Golang recover usage</h1>
+			  <span class="post-date">Mon, Jan 16, 2017</span>
 			      
 
-<h1 id="welcome-to-qianguozheng-tech-blog:2cc7dc244eed4480e8b46c91e911e96b">welcome to qianguozheng tech blog.</h1>
+<h1 id="golang-panic-recover-usage:4cee95b6a0f7ad978328106e5f21d269">Golang panic recover usage</h1>
+
+<h3 id="brief-introduction:4cee95b6a0f7ad978328106e5f21d269">Brief Introduction</h3>
+
+<p>In golang, some abnormal case would cause program crash, but if you want it recover, you need to handle it by hand.</p>
+
+<p>Below is the simple example of http function use recover to recover from panic caused by peer-end server crash.</p>
+
+<pre><code class="language-go">package main
+
+import (
+    &quot;errors&quot;
+    &quot;fmt&quot;
+    &quot;net/http&quot;
+    &quot;strings&quot;
+    &quot;time&quot;
+)
+
+var err error
+
+func httppost() {
+    for {
+        fmt.Println(&quot;Cycle...&quot;)
+        defer func() {
+
+            if r := recover(); r != nil {
+
+                fmt.Println(&quot;Recovered in testPanic2Error&quot;, r)
+
+                //check exactly what the panic was and create error.
+                switch x := r.(type) {
+                case string:
+                    err = errors.New(x)
+                case error:
+                    err = x
+                default:
+                    err = errors.New(&quot;Unknow panic&quot;)
+                }
+            }
+            fmt.Println(err)
+            httppost()
+
+        }()
+        resp, err := http.Post(&quot;http://127.0.0.1/v3/api/device/vpn&quot;,
+            &quot;application/x-www-form-urlencoded&quot;,
+            strings.NewReader(&quot;name=qgz&quot;))
+
+        if err != nil {
+            fmt.Println(err)
+        }
+
+        resp.Body.Close()
+
+        time.Sleep(time.Second * 5)
+        fmt.Println(&quot;Cycle...&quot;)
+    }
+}
+
+func main() {
+    httppost()
+}
+
+</code></pre>
 
 			</div>
 

@@ -3,12 +3,17 @@
   
   <url>
     <loc>https://qianguozheng.github.io/</loc>
-    <lastmod>2017-01-16T15:56:55+08:00</lastmod>
+    <lastmod>2017-01-20T10:09:56+08:00</lastmod>
     <priority>0</priority>
   </url>
   
   <url>
-    <loc>https://qianguozheng.github.io/post/golang-recover-usage/</loc>
+    <loc>https://qianguozheng.github.io/post/Golang-introducing-HTTP-tracing/</loc>
+    <lastmod>2017-01-20T10:09:56+08:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://qianguozheng.github.io/post/Golang-recover-usage/</loc>
     <lastmod>2017-01-16T15:56:55+08:00</lastmod>
   </url>
   
