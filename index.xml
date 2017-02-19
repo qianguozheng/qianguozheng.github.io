@@ -2,7 +2,7 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>钱国正博客</title>
-    <link>http://example.org/index.xml</link>
+    <link>http://example.org/</link>
     <description>Recent content on 钱国正博客</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
