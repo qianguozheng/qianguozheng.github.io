@@ -1,0 +1,188 @@
+	<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-us" lang="en-us">
+<head>
+  <link href="http://gmpg.org/xfn/11" rel="profile">
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+  <meta name="generator" content="Hugo 0.16-DEV" />
+
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+
+  
+  <title>Golang introducing HTTP tracing &middot; 钱国正博客</title>
+  
+
+<link rel="stylesheet" href="/css/monokai.css">
+  <script src="/js/highlight.pack.js"></script>
+
+  <script>hljs.initHighlightingOnLoad();</script>
+  
+  <link rel="stylesheet" href="https://qianguozheng.github.io/css/poole.css">
+  <link rel="stylesheet" href="https://qianguozheng.github.io/css/syntax.css">
+  <link rel="stylesheet" href="https://qianguozheng.github.io/css/hyde.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=PT+Sans:400,400italic,700|Abril+Fatface">
+
+  
+  <link rel="apple-touch-icon-precomposed" sizes="144x144" href="/apple-touch-icon-144-precomposed.png">
+  <link rel="shortcut icon" href="/favicon.png">
+
+  
+  <link href="" rel="alternate" type="application/rss+xml" title="钱国正博客" />
+</head>
+
+	<body class="theme-base-08 ">
+		<div class="sidebar">
+  <div class="container sidebar-sticky">
+    <div class="sidebar-about">
+      <a href="https://qianguozheng.github.io/"><h1>钱国正博客</h1></a>
+      <p class="lead">
+      An elegant open source and mobile first theme for <a href="http://hugo.spf13.com">hugo</a> made by <a href="http://twitter.com/mdo">@mdo</a>. Originally made for Jekyll.
+      </p>
+    </div>
+
+    <ul class="sidebar-nav">
+      <li><a href="/">Home</a> </li>
+      
+        <li><a href="/post/Golang-introducing-HTTP-tracing/"> Golang introducing HTTP tracing </a></li>
+      
+        <li><a href="/post/Golang-recover-usage/"> Golang recover usage </a></li>
+      
+    </ul>
+
+    <p>&copy; 2017. All rights reserved. </p>
+  </div>
+</div>
+
+
+		<div class="content container">
+			<div class="post">
+			 	<h1>Golang introducing HTTP tracing</h1>
+			  <span class="post-date">Fri, Jan 20, 2017</span>
+			      
+
+<h1 id="介绍:4ce321d90e539aeedd18dbea4986007d">介绍</h1>
+
+<p>在Go 1.7我们引入了HTTP跟踪， 用来收集HTTP客户端请求生命周期中详细信息的工作。包在net/http/httptrace. 手机的信息可以用来调试延时问题，服务监控，写适配系统等。</p>
+
+<h1 id="http-事件:4ce321d90e539aeedd18dbea4986007d">HTTP 事件</h1>
+
+<p>httptrace包提供了许多钩子在HTTP生命周期中收集信息。这些事件包括：</p>
+
+<ul>
+<li>Connection creation</li>
+<li>Connection reuse</li>
+<li>DNS lookups</li>
+<li>Writing the request to the wire</li>
+<li>Reading the response</li>
+</ul>
+
+<h1 id="跟踪事件:4ce321d90e539aeedd18dbea4986007d">跟踪事件</h1>
+
+<p>你可以通过放置一个*httptrace.ClientTrace 包含钩子函数在请求的context.Context中来开启http追踪。各种http.RoundTripper实现通过查找上下文的 *httptrace.ClientTrace和调用相关的钩子函数来汇报内部事件</p>
+
+<p>最终作用于请求的上下文，用户应该将一个 *httptrace.ClientTrace防到请求的上下文在开始请求之前。</p>
+
+<pre><code class="language-golang">    req, _ := http.NewRequest(&quot;GET&quot;, &quot;http://example.com&quot;, nil)
+    trace := &amp;httptrace.ClientTrace{
+        DNSDone: func(dnsInfo httptrace.DNSDoneInfo) {
+            fmt.Printf(&quot;DNS Info: %+v\n&quot;, dnsInfo)
+        },
+        GotConn: func(connInfo httptrace.GotConnInfo) {
+            fmt.Printf(&quot;Got Conn: %+v\n&quot;, connInfo)
+        },
+    }
+    req = req.WithContext(httptrace.WithClientTrace(req.Context(), trace))
+    if _, err := http.DefaultTransport.RoundTrip(req); err != nil {
+        log.Fatal(err)
+    }
+</code></pre>
+
+<p>在请求流程中，http.DefaultTransport会在事件发生时出发钩子。上面的程序会打印DNS信息当DNS查询完成时。同样的会打印连接信息当链接与请求主机建立连接时</p>
+
+<h1 id="使用http-client跟踪:4ce321d90e539aeedd18dbea4986007d">使用http.Client跟踪</h1>
+
+<p>跟踪机制设计用来跟踪单个的http.Transport.RoundTrip的声明周期事件。然而，一个客户端可以发起多个round trips来完成HTTP请求。例如，URL重定向，注册的钩子被调用多次当客户端跟踪HTTP重定向，发起多个请求。用户负责识别类似的事件在http.CLient中。下面的程序识别通过httpRoundTripper包裹识别当前的请求。</p>
+
+<pre><code>package main
+
+import (
+    &quot;fmt&quot;
+    &quot;log&quot;
+    &quot;net/http&quot;
+    &quot;net/http/httptrace&quot;
+)
+
+// transport is an http.RoundTripper that keeps track of the in-flight
+// request and implements hooks to report HTTP tracing events.
+type transport struct {
+    current *http.Request
+}
+
+// RoundTrip wraps http.DefaultTransport.RoundTrip to keep track
+// of the current request.
+func (t *transport) RoundTrip(req *http.Request) (*http.Response, error) {
+    t.current = req
+    return http.DefaultTransport.RoundTrip(req)
+}
+
+// GotConn prints whether the connection has been used previously
+// for the current request.
+func (t *transport) GotConn(info httptrace.GotConnInfo) {
+    fmt.Printf(&quot;Connection reused for %v? %v\n&quot;, t.current.URL, info.Reused)
+}
+
+func main() {
+    t := &amp;transport{}
+
+    req, _ := http.NewRequest(&quot;GET&quot;, &quot;https://google.com&quot;, nil)
+    trace := &amp;httptrace.ClientTrace{
+        GotConn: t.GotConn,
+    }
+    req = req.WithContext(httptrace.WithClientTrace(req.Context(), trace))
+
+    client := &amp;http.Client{Transport: t}
+    if _, err := client.Do(req); err != nil {
+        log.Fatal(err)
+    }
+}
+</code></pre>
+
+<p>程序将会跟踪重定向google.com 到www.google.com并打印如下：</p>
+
+<pre><code>Connection reused for https://google.com? false
+Connection reused for https://www.google.com/? false
+</code></pre>
+
+<p>传输在net/http包支持跟踪http/1和http/2</p>
+
+<p>如果你是一个定制的http.RoundTripper实现作者，你可以通过检查请求上下文并在相应的事件发生时触发钩子函数</p>
+
+<h1 id="结论:4ce321d90e539aeedd18dbea4986007d">结论</h1>
+
+<p>GO的HTTP跟踪对于那些感兴趣调试HTTP请求延时和些网络外部负载调试工具时。 通过开启这个功能，我们希望可以看到HTTP调试，性能。可视化工具来自社区例如httpstat.</p>
+
+<p>By Jaana Burcu Dogan</p>
+
+			</div>
+
+			
+				<h2>Comments</h2>
+				<div id="disqus_thread"></div>
+<script type="text/javascript">
+     
+    var disqus_shortname = 'spf13'; 
+
+     
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+			
+		</div>
+
+  </body>
+</html>
