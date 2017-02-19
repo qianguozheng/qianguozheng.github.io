@@ -2,11 +2,10 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Development on 钱国正博客</title>
-    <link>https://qianguozheng.github.io/categories/development/</link>
+    <link>https://qianguozheng.github.io/categories/development/index.xml</link>
     <description>Recent content in Development on 钱国正博客</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Sun, 19 Feb 2017 21:03:06 +0800</lastBuildDate>
     <atom:link href="https://qianguozheng.github.io/categories/development/index.xml" rel="self" type="application/rss+xml" />
     
     <item>
@@ -15,7 +14,77 @@
       <pubDate>Sun, 19 Feb 2017 21:03:06 +0800</pubDate>
       
       <guid>https://qianguozheng.github.io/post/Golang-session-problem/</guid>
-      <description></description>
+      <description>
+
+&lt;h1 id=&#34;golang-session-using-problem&#34;&gt;Golang Session using problem&lt;/h1&gt;
+
+&lt;p&gt;以前从事嵌入式工作，没有做过多用户的处理，比如web服务器上后台管理人员与普通用户的区别。&lt;/p&gt;
+
+&lt;p&gt;最近自己在写一个认证服务器的简单管理功能，想优化下就增加了admin管理权限。&lt;/p&gt;
+
+&lt;h2 id=&#34;初步设计&#34;&gt;初步设计&lt;/h2&gt;
+
+&lt;p&gt;通过通过mux来管理路由。然后在访问/admin/路径下的API时需要检测是否登陆。&lt;/p&gt;
+
+&lt;h2 id=&#34;实现中遇到的问题&#34;&gt;实现中遇到的问题&lt;/h2&gt;
+
+&lt;ol&gt;
+&lt;li&gt;mux的具体实现不知道，需要进一步了解，今后的文章要分析透彻。&lt;/li&gt;
+&lt;li&gt;google了很多的管理登陆的文章，发现都是需要在处理的API内部做判断登陆，这点我感觉繁琐了，增加一个中间件不就好了吗，但是怎么增加是一个问题。&lt;/li&gt;
+&lt;li&gt;另外一个就是session的使用中遇到的了，我明明增加了session，但是就是没有收到数据。&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;h2 id=&#34;中间件验证登陆解决方案&#34;&gt;中间件验证登陆解决方案&lt;/h2&gt;
+
+&lt;p&gt;通过mux建立路由，所有访问/admin/目录下的请求需要先验证是否登陆，即判断是否存在session。&lt;/p&gt;
+
+&lt;p&gt;只需要&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;    router := mux.NewRouter()
+	adminRoutes := mux.NewRouter()
+
+	router.HandleFunc(&amp;quot;/&amp;quot;, index)
+
+	adminRoutes.HandleFunc(&amp;quot;/admin/&amp;quot;, adminIndex)
+	...
+	
+	router.PathPrefix(&amp;quot;/admin&amp;quot;).Handler(negroni.New(
+		NewCheckLogin(),
+		negroni.Wrap(adminRoutes),
+	))
+	// /account/login
+	router.HandleFunc(&amp;quot;/account/login&amp;quot;, login)
+	http.ListenAndServe(&amp;quot;:8080&amp;quot;, router)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;negroni.New(New)eckLogin(),negroni.Wrap(adminRoutes)
+这句是进行验证的，具体原理还是需要去研究下，目前不是非常的明白。&lt;/p&gt;
+
+&lt;h2 id=&#34;session的使用比较奇怪-也是需要后续去学习领悟的地方&#34;&gt;Session的使用比较奇怪，也是需要后续去学习领悟的地方。&lt;/h2&gt;
+
+&lt;p&gt;除go基本类型外，复杂对象结构存储必须先注册。&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;import(
+		&amp;quot;encoding/gob&amp;quot;
+		&amp;quot;github.com/gorilla/sessions&amp;quot;
+	)
+
+	type Person struct {
+		FirstName	string
+		LastName 	string
+		Email		string
+		Age			int
+	}
+
+	type M map[string]interface{}
+
+	func init() {
+
+		gob.Register(&amp;amp;Person{})
+		gob.Register(&amp;amp;M{})
+	}
+&lt;/code&gt;&lt;/pre&gt;
+</description>
     </item>
     
     <item>
@@ -26,11 +95,11 @@
       <guid>https://qianguozheng.github.io/post/Golang-introducing-HTTP-tracing/</guid>
       <description>
 
-&lt;h1 id=&#34;介绍:4ce321d90e539aeedd18dbea4986007d&#34;&gt;介绍&lt;/h1&gt;
+&lt;h1 id=&#34;介绍&#34;&gt;介绍&lt;/h1&gt;
 
 &lt;p&gt;在Go 1.7我们引入了HTTP跟踪， 用来收集HTTP客户端请求生命周期中详细信息的工作。包在net/http/httptrace. 手机的信息可以用来调试延时问题，服务监控，写适配系统等。&lt;/p&gt;
 
-&lt;h1 id=&#34;http-事件:4ce321d90e539aeedd18dbea4986007d&#34;&gt;HTTP 事件&lt;/h1&gt;
+&lt;h1 id=&#34;http-事件&#34;&gt;HTTP 事件&lt;/h1&gt;
 
 &lt;p&gt;httptrace包提供了许多钩子在HTTP生命周期中收集信息。这些事件包括：&lt;/p&gt;
 
@@ -42,7 +111,7 @@
 &lt;li&gt;Reading the response&lt;/li&gt;
 &lt;/ul&gt;
 
-&lt;h1 id=&#34;跟踪事件:4ce321d90e539aeedd18dbea4986007d&#34;&gt;跟踪事件&lt;/h1&gt;
+&lt;h1 id=&#34;跟踪事件&#34;&gt;跟踪事件&lt;/h1&gt;
 
 &lt;p&gt;你可以通过放置一个*httptrace.ClientTrace 包含钩子函数在请求的context.Context中来开启http追踪。各种http.RoundTripper实现通过查找上下文的 *httptrace.ClientTrace和调用相关的钩子函数来汇报内部事件&lt;/p&gt;
 
@@ -65,7 +134,7 @@
 
 &lt;p&gt;在请求流程中，http.DefaultTransport会在事件发生时出发钩子。上面的程序会打印DNS信息当DNS查询完成时。同样的会打印连接信息当链接与请求主机建立连接时&lt;/p&gt;
 
-&lt;h1 id=&#34;使用http-client跟踪:4ce321d90e539aeedd18dbea4986007d&#34;&gt;使用http.Client跟踪&lt;/h1&gt;
+&lt;h1 id=&#34;使用http-client跟踪&#34;&gt;使用http.Client跟踪&lt;/h1&gt;
 
 &lt;p&gt;跟踪机制设计用来跟踪单个的http.Transport.RoundTrip的声明周期事件。然而，一个客户端可以发起多个round trips来完成HTTP请求。例如，URL重定向，注册的钩子被调用多次当客户端跟踪HTTP重定向，发起多个请求。用户负责识别类似的事件在http.CLient中。下面的程序识别通过httpRoundTripper包裹识别当前的请求。&lt;/p&gt;
 
@@ -123,7 +192,7 @@ Connection reused for https://www.google.com/? false
 
 &lt;p&gt;如果你是一个定制的http.RoundTripper实现作者，你可以通过检查请求上下文并在相应的事件发生时触发钩子函数&lt;/p&gt;
 
-&lt;h1 id=&#34;结论:4ce321d90e539aeedd18dbea4986007d&#34;&gt;结论&lt;/h1&gt;
+&lt;h1 id=&#34;结论&#34;&gt;结论&lt;/h1&gt;
 
 &lt;p&gt;GO的HTTP跟踪对于那些感兴趣调试HTTP请求延时和些网络外部负载调试工具时。 通过开启这个功能，我们希望可以看到HTTP调试，性能。可视化工具来自社区例如httpstat.&lt;/p&gt;
 
@@ -139,9 +208,9 @@ Connection reused for https://www.google.com/? false
       <guid>https://qianguozheng.github.io/post/Golang-recover-usage/</guid>
       <description>
 
-&lt;h1 id=&#34;golang-panic-recover-usage:4cee95b6a0f7ad978328106e5f21d269&#34;&gt;Golang panic recover usage&lt;/h1&gt;
+&lt;h1 id=&#34;golang-panic-recover-usage&#34;&gt;Golang panic recover usage&lt;/h1&gt;
 
-&lt;h3 id=&#34;brief-introduction:4cee95b6a0f7ad978328106e5f21d269&#34;&gt;Brief Introduction&lt;/h3&gt;
+&lt;h3 id=&#34;brief-introduction&#34;&gt;Brief Introduction&lt;/h3&gt;
 
 &lt;p&gt;In golang, some abnormal case would cause program crash, but if you want it recover, you need to handle it by hand.&lt;/p&gt;
 

@@ -3,7 +3,7 @@
 <head>
   <link href="http://gmpg.org/xfn/11" rel="profile">
   <meta http-equiv="content-type" content="text/html; charset=utf-8">
-  <meta name="generator" content="Hugo 0.16-DEV" />
+  <meta name="generator" content="Hugo 0.18.1" />
 
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
@@ -61,24 +61,78 @@
 			 	<h1>Golang session problem</h1>
 			  <span class="post-date">Sun, Feb 19, 2017</span>
 			      
+
+<h1 id="golang-session-using-problem">Golang Session using problem</h1>
+
+<p>以前从事嵌入式工作，没有做过多用户的处理，比如web服务器上后台管理人员与普通用户的区别。</p>
+
+<p>最近自己在写一个认证服务器的简单管理功能，想优化下就增加了admin管理权限。</p>
+
+<h2 id="初步设计">初步设计</h2>
+
+<p>通过通过mux来管理路由。然后在访问/admin/路径下的API时需要检测是否登陆。</p>
+
+<h2 id="实现中遇到的问题">实现中遇到的问题</h2>
+
+<ol>
+<li>mux的具体实现不知道，需要进一步了解，今后的文章要分析透彻。</li>
+<li>google了很多的管理登陆的文章，发现都是需要在处理的API内部做判断登陆，这点我感觉繁琐了，增加一个中间件不就好了吗，但是怎么增加是一个问题。</li>
+<li>另外一个就是session的使用中遇到的了，我明明增加了session，但是就是没有收到数据。</li>
+</ol>
+
+<h2 id="中间件验证登陆解决方案">中间件验证登陆解决方案</h2>
+
+<p>通过mux建立路由，所有访问/admin/目录下的请求需要先验证是否登陆，即判断是否存在session。</p>
+
+<p>只需要</p>
+
+<pre><code>    router := mux.NewRouter()
+	adminRoutes := mux.NewRouter()
+
+	router.HandleFunc(&quot;/&quot;, index)
+
+	adminRoutes.HandleFunc(&quot;/admin/&quot;, adminIndex)
+	...
+	
+	router.PathPrefix(&quot;/admin&quot;).Handler(negroni.New(
+		NewCheckLogin(),
+		negroni.Wrap(adminRoutes),
+	))
+	// /account/login
+	router.HandleFunc(&quot;/account/login&quot;, login)
+	http.ListenAndServe(&quot;:8080&quot;, router)
+</code></pre>
+
+<p>negroni.New(New)eckLogin(),negroni.Wrap(adminRoutes)
+这句是进行验证的，具体原理还是需要去研究下，目前不是非常的明白。</p>
+
+<h2 id="session的使用比较奇怪-也是需要后续去学习领悟的地方">Session的使用比较奇怪，也是需要后续去学习领悟的地方。</h2>
+
+<p>除go基本类型外，复杂对象结构存储必须先注册。</p>
+
+<pre><code>import(
+		&quot;encoding/gob&quot;
+		&quot;github.com/gorilla/sessions&quot;
+	)
+
+	type Person struct {
+		FirstName	string
+		LastName 	string
+		Email		string
+		Age			int
+	}
+
+	type M map[string]interface{}
+
+	func init() {
+
+		gob.Register(&amp;Person{})
+		gob.Register(&amp;M{})
+	}
+</code></pre>
+
 			</div>
 
-			
-				<h2>Comments</h2>
-				<div id="disqus_thread"></div>
-<script type="text/javascript">
-     
-    var disqus_shortname = 'spf13'; 
-
-     
-    (function() {
-        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
-        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
-        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
-    })();
-</script>
-<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
-</div>
 			
 		</div>
 

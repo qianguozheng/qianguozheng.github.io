@@ -3,7 +3,7 @@
 <head>
   <link href="http://gmpg.org/xfn/11" rel="profile">
   <meta http-equiv="content-type" content="text/html; charset=utf-8">
-  <meta name="generator" content="Hugo 0.16-DEV" />
+  <meta name="generator" content="Hugo 0.18.1" />
 
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
@@ -71,6 +71,76 @@
     <span class="post-date">Sun, Feb 19, 2017</span>
 
     
+
+<h1 id="golang-session-using-problem">Golang Session using problem</h1>
+
+<p>以前从事嵌入式工作，没有做过多用户的处理，比如web服务器上后台管理人员与普通用户的区别。</p>
+
+<p>最近自己在写一个认证服务器的简单管理功能，想优化下就增加了admin管理权限。</p>
+
+<h2 id="初步设计">初步设计</h2>
+
+<p>通过通过mux来管理路由。然后在访问/admin/路径下的API时需要检测是否登陆。</p>
+
+<h2 id="实现中遇到的问题">实现中遇到的问题</h2>
+
+<ol>
+<li>mux的具体实现不知道，需要进一步了解，今后的文章要分析透彻。</li>
+<li>google了很多的管理登陆的文章，发现都是需要在处理的API内部做判断登陆，这点我感觉繁琐了，增加一个中间件不就好了吗，但是怎么增加是一个问题。</li>
+<li>另外一个就是session的使用中遇到的了，我明明增加了session，但是就是没有收到数据。</li>
+</ol>
+
+<h2 id="中间件验证登陆解决方案">中间件验证登陆解决方案</h2>
+
+<p>通过mux建立路由，所有访问/admin/目录下的请求需要先验证是否登陆，即判断是否存在session。</p>
+
+<p>只需要</p>
+
+<pre><code>    router := mux.NewRouter()
+	adminRoutes := mux.NewRouter()
+
+	router.HandleFunc(&quot;/&quot;, index)
+
+	adminRoutes.HandleFunc(&quot;/admin/&quot;, adminIndex)
+	...
+	
+	router.PathPrefix(&quot;/admin&quot;).Handler(negroni.New(
+		NewCheckLogin(),
+		negroni.Wrap(adminRoutes),
+	))
+	// /account/login
+	router.HandleFunc(&quot;/account/login&quot;, login)
+	http.ListenAndServe(&quot;:8080&quot;, router)
+</code></pre>
+
+<p>negroni.New(New)eckLogin(),negroni.Wrap(adminRoutes)
+这句是进行验证的，具体原理还是需要去研究下，目前不是非常的明白。</p>
+
+<h2 id="session的使用比较奇怪-也是需要后续去学习领悟的地方">Session的使用比较奇怪，也是需要后续去学习领悟的地方。</h2>
+
+<p>除go基本类型外，复杂对象结构存储必须先注册。</p>
+
+<pre><code>import(
+		&quot;encoding/gob&quot;
+		&quot;github.com/gorilla/sessions&quot;
+	)
+
+	type Person struct {
+		FirstName	string
+		LastName 	string
+		Email		string
+		Age			int
+	}
+
+	type M map[string]interface{}
+
+	func init() {
+
+		gob.Register(&amp;Person{})
+		gob.Register(&amp;M{})
+	}
+</code></pre>
+
   </div>
   
   <div class="post">
@@ -84,11 +154,11 @@
 
     
 
-<h1 id="介绍:4ce321d90e539aeedd18dbea4986007d">介绍</h1>
+<h1 id="介绍">介绍</h1>
 
 <p>在Go 1.7我们引入了HTTP跟踪， 用来收集HTTP客户端请求生命周期中详细信息的工作。包在net/http/httptrace. 手机的信息可以用来调试延时问题，服务监控，写适配系统等。</p>
 
-<h1 id="http-事件:4ce321d90e539aeedd18dbea4986007d">HTTP 事件</h1>
+<h1 id="http-事件">HTTP 事件</h1>
 
 <p>httptrace包提供了许多钩子在HTTP生命周期中收集信息。这些事件包括：</p>
 
@@ -100,7 +170,7 @@
 <li>Reading the response</li>
 </ul>
 
-<h1 id="跟踪事件:4ce321d90e539aeedd18dbea4986007d">跟踪事件</h1>
+<h1 id="跟踪事件">跟踪事件</h1>
 
 <p>你可以通过放置一个*httptrace.ClientTrace 包含钩子函数在请求的context.Context中来开启http追踪。各种http.RoundTripper实现通过查找上下文的 *httptrace.ClientTrace和调用相关的钩子函数来汇报内部事件</p>
 
@@ -123,7 +193,7 @@
 
 <p>在请求流程中，http.DefaultTransport会在事件发生时出发钩子。上面的程序会打印DNS信息当DNS查询完成时。同样的会打印连接信息当链接与请求主机建立连接时</p>
 
-<h1 id="使用http-client跟踪:4ce321d90e539aeedd18dbea4986007d">使用http.Client跟踪</h1>
+<h1 id="使用http-client跟踪">使用http.Client跟踪</h1>
 
 <p>跟踪机制设计用来跟踪单个的http.Transport.RoundTrip的声明周期事件。然而，一个客户端可以发起多个round trips来完成HTTP请求。例如，URL重定向，注册的钩子被调用多次当客户端跟踪HTTP重定向，发起多个请求。用户负责识别类似的事件在http.CLient中。下面的程序识别通过httpRoundTripper包裹识别当前的请求。</p>
 
@@ -181,7 +251,7 @@ Connection reused for https://www.google.com/? false
 
 <p>如果你是一个定制的http.RoundTripper实现作者，你可以通过检查请求上下文并在相应的事件发生时触发钩子函数</p>
 
-<h1 id="结论:4ce321d90e539aeedd18dbea4986007d">结论</h1>
+<h1 id="结论">结论</h1>
 
 <p>GO的HTTP跟踪对于那些感兴趣调试HTTP请求延时和些网络外部负载调试工具时。 通过开启这个功能，我们希望可以看到HTTP调试，性能。可视化工具来自社区例如httpstat.</p>
 
@@ -200,9 +270,9 @@ Connection reused for https://www.google.com/? false
 
     
 
-<h1 id="golang-panic-recover-usage:4cee95b6a0f7ad978328106e5f21d269">Golang panic recover usage</h1>
+<h1 id="golang-panic-recover-usage">Golang panic recover usage</h1>
 
-<h3 id="brief-introduction:4cee95b6a0f7ad978328106e5f21d269">Brief Introduction</h3>
+<h3 id="brief-introduction">Brief Introduction</h3>
 
 <p>In golang, some abnormal case would cause program crash, but if you want it recover, you need to handle it by hand.</p>
 
@@ -277,7 +347,7 @@ func main() {
 
     
 
-<h1 id="welcome-to-qianguozheng-tech-blog:2cc7dc244eed4480e8b46c91e911e96b">welcome to qianguozheng tech blog.</h1>
+<h1 id="welcome-to-qianguozheng-tech-blog">welcome to qianguozheng tech blog.</h1>
 
   </div>
   
