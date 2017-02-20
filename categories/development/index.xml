@@ -6,8 +6,72 @@
     <description>Recent content in Development on 钱国正博客</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Mon, 20 Feb 2017 11:03:48 +0800</lastBuildDate>
+    <lastBuildDate>Mon, 20 Feb 2017 11:23:14 +0800</lastBuildDate>
     <atom:link href="https://qianguozheng.github.io/categories/development/index.xml" rel="self" type="application/rss+xml" />
+    
+    <item>
+      <title>hugo deploy as submodule on github</title>
+      <link>https://qianguozheng.github.io/post/hugo-deploy-as-submodule-on-github/</link>
+      <pubDate>Mon, 20 Feb 2017 11:23:14 +0800</pubDate>
+      
+      <guid>https://qianguozheng.github.io/post/hugo-deploy-as-submodule-on-github/</guid>
+      <description>
+
+&lt;p&gt;本Blog就是基于Hugo的，由于担心这次的操作记录丢失，我特意写了这篇博客来记录如何使用这个东西。&lt;/p&gt;
+
+&lt;p&gt;首先根据文档 &lt;a href=&#34;http://www.gohugo.io/tutorials/github-pages-blog/&#34;&gt;gohugo&lt;/a&gt;中的&lt;a href=&#34;http://www.gohugo.io/tutorials/github-pages-blog/#hosting-personal-organization-pages&#34;&gt;第二部分&lt;/a&gt;：&lt;/p&gt;
+
+&lt;p&gt;以上文章介绍了如何部署的大概情况，按照步骤来就不会有问题的。&lt;/p&gt;
+
+&lt;p&gt;但是维护起来需要熟悉git submodule的概念与使用，我自以为用过git submodule就安心的使用起来了，可是始终不得其意。
+最终还是被我搞定了。&lt;/p&gt;
+
+&lt;p&gt;首先每次下载 &lt;a href=&#34;https://github.com/qianguozheng/blog-hugo.git&#34;&gt;https://github.com/qianguozheng/blog-hugo.git&lt;/a&gt; 的时候，总是没有自动更新&lt;a href=&#34;https://github.com/qianguozheng/qianguozheng.github.io.git&#34;&gt;子模块&lt;/a&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;	git submodule update --init --recursive
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;&lt;a href=&#34;http://blog.csdn.net/wangjia55/article/details/24400501&#34;&gt;来自&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;然后是执行./deploy.sh的时候没有提交子模块。&lt;/p&gt;
+
+&lt;p&gt;这个问题是我偶然发现问题的，我当时并不在master分支，而是特定的分支，导致无法提交。
+所以 checkout下，提交就好了&lt;/p&gt;
+
+&lt;p&gt;整个工作流程如下：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;	git clone https://github.com/qianguozheng/blog-hugo.git
+	cd blog-hugo;
+	#下载子模块
+	git submodule update --init --recursive
+	
+	cd public
+	git checkout master
+	cd ../
+	
+	#创建博客
+	hugo new post/Golang-test.md
+	
+	#编辑博客等操作
+	...
+	
+	#提交qianguozheng.github.io.git仓库
+	./deploy.sh
+	
+	#提交blog-hugo仓库
+	git add -A
+	git commit -m &amp;quot;Update blog&amp;quot;
+	git push origin master	
+
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;完美结束&lt;/p&gt;
+
+&lt;h2 id=&#34;结论:792757c8b8fb721dcdc493eb4ef87719&#34;&gt;结论&lt;/h2&gt;
+
+&lt;p&gt;不懂就多做测试，总会解决的&lt;/p&gt;
+</description>
+    </item>
     
     <item>
       <title>Golang mux study</title>
