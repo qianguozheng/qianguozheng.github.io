@@ -9,7 +9,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
 
   
-  <title>Golang recover usage &middot; 钱国正博客</title>
+  <title>Golang mux study &middot; 钱国正博客</title>
   
 
 <link rel="stylesheet" href="/css/monokai.css">
@@ -45,6 +45,8 @@
       
         <li><a href="/post/Golang-introducing-HTTP-tracing/"> Golang introducing HTTP tracing </a></li>
       
+        <li><a href="/post/Golang-mux-study/"> Golang mux study </a></li>
+      
         <li><a href="/post/Golang-recover-usage/"> Golang recover usage </a></li>
       
         <li><a href="/post/Golang-session-problem/"> Golang session problem </a></li>
@@ -58,73 +60,11 @@
 
 		<div class="content container">
 			<div class="post">
-			 	<h1>Golang recover usage</h1>
-			  <span class="post-date">Mon, Jan 16, 2017</span>
-			      
+			 	<h1>Golang mux study</h1>
+			  <span class="post-date">Sun, Feb 19, 2017</span>
+			      <p>To be done</p>
 
-<h1 id="golang-panic-recover-usage">Golang panic recover usage</h1>
-
-<h3 id="brief-introduction">Brief Introduction</h3>
-
-<p>In golang, some abnormal case would cause program crash, but if you want it recover, you need to handle it by hand.</p>
-
-<p>Below is the simple example of http function use recover to recover from panic caused by peer-end server crash.</p>
-
-<pre><code class="language-go">package main
-
-import (
-    &quot;errors&quot;
-    &quot;fmt&quot;
-    &quot;net/http&quot;
-    &quot;strings&quot;
-    &quot;time&quot;
-)
-
-var err error
-
-func httppost() {
-    for {
-        fmt.Println(&quot;Cycle...&quot;)
-        defer func() {
-
-            if r := recover(); r != nil {
-
-                fmt.Println(&quot;Recovered in testPanic2Error&quot;, r)
-
-                //check exactly what the panic was and create error.
-                switch x := r.(type) {
-                case string:
-                    err = errors.New(x)
-                case error:
-                    err = x
-                default:
-                    err = errors.New(&quot;Unknow panic&quot;)
-                }
-            }
-            fmt.Println(err)
-            httppost()
-
-        }()
-        resp, err := http.Post(&quot;http://127.0.0.1/v3/api/device/vpn&quot;,
-            &quot;application/x-www-form-urlencoded&quot;,
-            strings.NewReader(&quot;name=qgz&quot;))
-
-        if err != nil {
-            fmt.Println(err)
-        }
-
-        resp.Body.Close()
-
-        time.Sleep(time.Second * 5)
-        fmt.Println(&quot;Cycle...&quot;)
-    }
-}
-
-func main() {
-    httppost()
-}
-
-</code></pre>
+<p>Deadline 2017-2-28</p>
 
 			</div>
 
