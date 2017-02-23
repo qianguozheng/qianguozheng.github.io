@@ -11,10 +11,10 @@
     
     <item>
       <title>gorilla context doc</title>
-      <link>https://qianguozheng.github.io/post/gorilla-context-doc/</link>
+      <link>https://qianguozheng.github.io/post/Golang-gorilla-context-doc/</link>
       <pubDate>Thu, 23 Feb 2017 17:26:24 +0800</pubDate>
       
-      <guid>https://qianguozheng.github.io/post/gorilla-context-doc/</guid>
+      <guid>https://qianguozheng.github.io/post/Golang-gorilla-context-doc/</guid>
       <description>&lt;p&gt;翻译 github.com/gorilla/context/doc.go&lt;/p&gt;
 
 &lt;p&gt;包context存储的值在一个请求的声明周期中是共享的。&lt;/p&gt;

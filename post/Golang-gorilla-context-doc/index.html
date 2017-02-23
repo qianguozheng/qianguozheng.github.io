@@ -9,7 +9,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
 
   
-  <title>Golang session problem &middot; 钱国正博客</title>
+  <title>gorilla context doc &middot; 钱国正博客</title>
   
 
 <link rel="stylesheet" href="/css/monokai.css">
@@ -64,78 +64,85 @@
 
 		<div class="content container">
 			<div class="post">
-			 	<h1>Golang session problem</h1>
-			  <span class="post-date">Sun, Feb 19, 2017</span>
-			      
+			 	<h1>gorilla context doc</h1>
+			  <span class="post-date">Thu, Feb 23, 2017</span>
+			      <p>翻译 github.com/gorilla/context/doc.go</p>
 
-<h1 id="golang-session-using-problem:3689b5210b345acfc0507cf19690ede1">Golang Session using problem</h1>
+<p>包context存储的值在一个请求的声明周期中是共享的。</p>
 
-<p>以前从事嵌入式工作，没有做过多用户的处理，比如web服务器上后台管理人员与普通用户的区别。</p>
+<blockquote>
+<p>注意：gorilla/context, 比<code>context.Context</code>诞生的早，不能很好的支持<a href="https://golang.org/pkg/net/http/#Request.WithContext"><code>http.Request.WithContext</code></a> (引入于Go1.7). 你应该只使用gorilla/context或者换到新的 <code>http.Request.Context()</code>.</p>
+</blockquote>
 
-<p>最近自己在写一个认证服务器的简单管理功能，想优化下就增加了admin管理权限。</p>
+<p>例如， 一个路由可以设置从URL中提取出来的变量， 并且程序的处理者可以访问这些值， 或者这个可以用来存储会话值在请求的最后。还有集中其他的常用方法。</p>
 
-<h2 id="初步设计:3689b5210b345acfc0507cf19690ede1">初步设计</h2>
+<p>这个想法是Brad Fitzpatrick在go-nuts的邮件列表中提出的：</p>
 
-<p>通过通过mux来管理路由。然后在访问/admin/路径下的API时需要检测是否登陆。</p>
-
-<h2 id="实现中遇到的问题:3689b5210b345acfc0507cf19690ede1">实现中遇到的问题</h2>
-
-<ol>
-<li>mux的具体实现不知道，需要进一步了解，今后的文章要分析透彻。</li>
-<li>google了很多的管理登陆的文章，发现都是需要在处理的API内部做判断登陆，这点我感觉繁琐了，增加一个中间件不就好了吗，但是怎么增加是一个问题。</li>
-<li>另外一个就是session的使用中遇到的了，我明明增加了session，但是就是没有收到数据。</li>
-</ol>
-
-<h2 id="中间件验证登陆解决方案:3689b5210b345acfc0507cf19690ede1">中间件验证登陆解决方案</h2>
-
-<p>通过mux建立路由，所有访问/admin/目录下的请求需要先验证是否登陆，即判断是否存在session。</p>
-
-<p>只需要</p>
-
-<pre><code>    router := mux.NewRouter()
-	adminRoutes := mux.NewRouter()
-
-	router.HandleFunc(&quot;/&quot;, index)
-
-	adminRoutes.HandleFunc(&quot;/admin/&quot;, adminIndex)
-	...
-	
-	router.PathPrefix(&quot;/admin&quot;).Handler(negroni.New(
-		NewCheckLogin(),
-		negroni.Wrap(adminRoutes),
-	))
-	// /account/login
-	router.HandleFunc(&quot;/account/login&quot;, login)
-	http.ListenAndServe(&quot;:8080&quot;, router)
+<pre><code>    http://groups.google.com/group/golang-nuts/msg/e2d679d303aa5d53
 </code></pre>
 
-<p>negroni.New(New)eckLogin(),negroni.Wrap(adminRoutes)
-这句是进行验证的，具体原理还是需要去研究下，目前不是非常的明白。</p>
+<p>这里是基础用法： 首先定义你需要的键。 键的类型是interface{} 所以你可以存储任何类型。</p>
 
-<h2 id="session的使用比较奇怪-也是需要后续去学习领悟的地方:3689b5210b345acfc0507cf19690ede1">Session的使用比较奇怪，也是需要后续去学习领悟的地方。</h2>
+<p>这里我们定义一个键使用常用的int类型来必买名称冲突：</p>
 
-<p>除go基本类型外，复杂对象结构存储必须先注册。</p>
+<pre><code>package foo
 
-<pre><code>import(
-        &quot;encoding/gob&quot;
-        &quot;github.com/gorilla/sessions&quot;
-    )
+import (
+    &quot;github.com/gorilla/context&quot;
+)
 
-    type Person struct {
-        FirstName   string
-        LastName    string
-        Email       string
-        Age         int
-    }
+type key int
 
-    type M map[string]interface{}
-
-    func init() {
-
-        gob.Register(&amp;Person{})
-        gob.Register(&amp;M{})
-    }
+const MyKey key = 0
 </code></pre>
+
+<p>然后设置一个变量。 变量是绑定到http.Request对象的， 所以你需要请求的实例来设置值：</p>
+
+<pre><code>context.Set(r, MyKey, &quot;bar&quot;)
+</code></pre>
+
+<p>程序可以后续使用你提供的键来访问变量：</p>
+
+<pre><code>func MyHandler(w http.ResponseWriter, r *http.Request){
+    // val is &quot;bar&quot;.
+    val := context.Get(r, foo.MyKey)
+
+    // returns (&quot;bar&quot;, true)
+    val, ok := context.GetOk(r, foo.MyKey)
+    //...
+}
+</code></pre>
+
+<p>这是最基础的使用方式。 我们在下面讨论一些别的用法。</p>
+
+<p>所有类型都可以存储在context中。强制使用一种类型， 把键变得私用，并且包裹Get() 和Set()来接受和返回特定类型的值：</p>
+
+<pre><code>type key int
+
+const mykey key = 0
+
+// GetMyKey returns a value for this package from the request values.
+func GetMyKey(r *http.Request) SomeType{
+    if rv := context.Get(r, mykey); rv != nil {
+        return rv.(SomeType)
+    }
+    return nil
+}
+
+// SetMyKey sets a value for this package in the request values.
+func SetMyKey(r *http.Request, val SomeType){
+    context.Set(r, mykey, val)
+}
+</code></pre>
+
+<p>变量必须在请求的结尾清除，以删除所有存储的值。这个可以在http.Handler中做， 在请求被处理的时候。 只需要调用Clear()</p>
+
+<pre><code>context.Clear(r)
+</code></pre>
+
+<p>&hellip;或者使用 ClearHandler(), 这个方便的包裹来一个http.Handler在请求声明周期的末尾来请求变量</p>
+
+<p>包gorilla/mux 和gorilla/pat中的路由调用Clear()所以如果你使用他们中的一个，你不需要手动清除上下文。</p>
 
 			</div>
 
