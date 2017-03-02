@@ -1,0 +1,308 @@
+	<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-us" lang="en-us">
+<head>
+  <link href="http://gmpg.org/xfn/11" rel="profile">
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+  <meta name="generator" content="Hugo 0.16-DEV" />
+
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+
+  
+  <title>Golang gorilla mux &middot; 钱国正博客</title>
+  
+
+<link rel="stylesheet" href="/css/monokai.css">
+  <script src="/js/highlight.pack.js"></script>
+
+  <script>hljs.initHighlightingOnLoad();</script>
+  
+  <link rel="stylesheet" href="https://qianguozheng.github.io/css/poole.css">
+  <link rel="stylesheet" href="https://qianguozheng.github.io/css/syntax.css">
+  <link rel="stylesheet" href="https://qianguozheng.github.io/css/hyde.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=PT+Sans:400,400italic,700|Abril+Fatface">
+
+  
+  <link rel="apple-touch-icon-precomposed" sizes="144x144" href="/apple-touch-icon-144-precomposed.png">
+  <link rel="shortcut icon" href="/favicon.png">
+
+  
+  <link href="" rel="alternate" type="application/rss+xml" title="钱国正博客" />
+</head>
+
+	<body class="theme-base-08 ">
+		<div class="sidebar">
+  <div class="container sidebar-sticky">
+    <div class="sidebar-about">
+      <a href="https://qianguozheng.github.io/"><h1>钱国正博客</h1></a>
+      <p class="lead">
+      An elegant open source and mobile first theme for <a href="http://hugo.spf13.com">hugo</a> made by <a href="http://twitter.com/mdo">@mdo</a>. Originally made for Jekyll.
+      </p>
+    </div>
+
+    <ul class="sidebar-nav">
+      <li><a href="/">Home</a> </li>
+      
+        <li><a href="/post/Golang-gorilla-context-doc/"> Golang gorilla context doc </a></li>
+      
+        <li><a href="/post/Golang-gorilla-mux/"> Golang gorilla mux </a></li>
+      
+        <li><a href="/post/Golang-introducing-HTTP-tracing/"> Golang introducing HTTP tracing </a></li>
+      
+        <li><a href="/post/Golang-recover-usage/"> Golang recover usage </a></li>
+      
+        <li><a href="/post/Golang-session-problem/"> Golang session problem </a></li>
+      
+        <li><a href="/post/hugo-deploy-as-submodule-on-github/"> hugo deploy as submodule on github </a></li>
+      
+    </ul>
+
+    <p>&copy; 2017. All rights reserved. </p>
+  </div>
+</div>
+
+
+		<div class="content container">
+			<div class="post">
+			 	<h1>Golang gorilla mux</h1>
+			  <span class="post-date">Mon, Feb 20, 2017</span>
+			      <p>翻译 github.com/gorilla/mux/doc.go</p>
+
+<p>包mux实现了路由请求与分发。</p>
+
+<p>mux代表“HTTP请求多路复用”。 像标准的http.ServeMux, mux.Router匹配进来的请求和一些注册的路径， 并且调用处理函数来处理匹配URL或其他条件的。 主要特色如下：</p>
+
+<ul>
+<li>请求可以基于URL主机， 路径，路径前缀， schemes, 头，请求值， HTTP方法或者特定的匹配方式。</li>
+<li>URL主机可路径可以通过可选的正则表达式来匹配。</li>
+<li>Registered URLs can be built, or &ldquo;reversed&rdquo;, which helps maintaining references to resources.</li>
+<li>路由可以作为子路由： 子路由仅仅当父路由匹配的时候才会比对。 这种方式可以定义遗嘱路径拥有共同的条件特征，如主机，路径牵住，或者其他的重复属性。 额外的，这个优化请求匹配。</li>
+<li>实现了http.Handler接口所以这个和标准的http.ServeMux兼容</li>
+</ul>
+
+<p>我们来注册一些URL路径和处理函数：</p>
+
+<pre><code>func main(){
+    r := mux.NewRouter()
+    r.HandleFunc(&quot;/&quot;, HomeHandler)
+    r.HandleFunc(&quot;/products&quot;, ProductsHandler)
+    r.HandleFunc(&quot;/articles&quot;, ArticlesHandler)
+    http.Handle(&quot;/&quot;, r)
+}
+</code></pre>
+
+<p>我们注册了3个路径映射URL给处理函数。这个与http.HandleFunc()类似: 如果一个请求的URL符合路径，相应的处理函数被调用， 以(http.ResponseWriter, *http.Request)作为参数。</p>
+
+<p>路径可以有变量。 他们定义使用这种格式 {name} 或者 {name:pattern}. 如果一个正常的表达模式未被定义， 匹配的变量将会是任何值，直到下一个斜线。例如：</p>
+
+<pre><code>r := mux.NewRouter()
+r.HandleFunc(&quot;/products/{key}&quot;, ProductHandler)
+r.HandleFunc(&quot;/articles/{category}/&quot;, ArticlesCategoryHandler)
+r.HandleFunc(&quot;/articles/{category}/{id:[0-9]+}&quot;, ArticleHandler)
+</code></pre>
+
+<p>组可以在模式内使用，只要没有捕捉(?:re). 例如：</p>
+
+<pre><code>r.HandleFunc(&quot;/articles/{category}/{sort:(?:asc|desc|new)}&quot;, ArticleCategoryHandler)
+</code></pre>
+
+<p>名字可以用来创建一组路由变量的映射，可以通过调用mux.Vars()获得：</p>
+
+<pre><code>vars := mux.Vars(request)
+category := vars[&quot;category&quot;]
+</code></pre>
+
+<p>如果任何的capturing组存在， mux会panic()在解析的过程中。阻止这种情况发生，转换任何的capturing组为非capturing，例如 转换&rdquo;/{sort:(asc|desc)}&ldquo;为&rdquo;/{sort:{?:asc|dest}}&ldquo;. 这是从之前的不可预测的行为转换来的当capturing组存在的时候。</p>
+
+<p>这就是所有你需要知道的基础。更高级的选项在下面解释。</p>
+
+<p>路由同样可以限制一个域名或者子域名。 定义一个主机模式来匹配， 他们同样可以有变量：</p>
+
+<pre><code>r := mux.NewRouter()
+//Only matches if domain is &quot;www.example.com&quot;.
+r.Host(&quot;www.example.com&quot;)
+//Matches a dynamic subdomain.
+r.Host(&quot;{subdomain:[a-z]+}.domain.com&quot;)
+</code></pre>
+
+<p>还有其他几种匹配可以添加，来匹配这种路径前缀：</p>
+
+<pre><code>r.PathPrefix(&quot;/products/&quot;)
+</code></pre>
+
+<p>&hellip;或者HTTP方法</p>
+
+<pre><code>r.Methods(&quot;GET&quot;, &quot;POST&quot;)
+</code></pre>
+
+<p>&hellip;或者 URL schemes:</p>
+
+<pre><code>r.Schemes(&quot;https&quot;)
+</code></pre>
+
+<p>&hellip;或者 头部值</p>
+
+<pre><code>r.Headers(&quot;X-Requested-With&quot;, &quot;XMLHttpRequest&quot;)
+</code></pre>
+
+<p>&hellip;或者 请求值</p>
+
+<pre><code>r.Queries(&quot;key&quot;, &quot;value&quot;)
+</code></pre>
+
+<p>&hellip;或者 使用定制匹配函数</p>
+
+<pre><code>r.MatcherFunc(func(r *http.Request, rm *RouteMatch) bool{
+    return r.ProtoMajor == 0
+})
+</code></pre>
+
+<p>&hellip;最终， 也可以组合几种匹配到一个路由中：</p>
+
+<pre><code>r.HandleFunc(&quot;/products&quot;, ProductsHandler).
+    Host(&quot;www.example.com&quot;).
+    Methods(&quot;GET&quot;).
+    Schemes(&quot;http&quot;)
+</code></pre>
+
+<p>一遍又一遍的设置同样的路径很烦人， 所以我们可以使用组来共享满足相同条件的路由：</p>
+
+<pre><code>r := mux.NewRouter()
+s := r.Host(&quot;www.example.com&quot;).Subrouter()
+</code></pre>
+
+<p>然在在路由中注册子路由：</p>
+
+<pre><code>s.HandleFunc(&quot;/products/&quot;, ProductsHandler)
+s.HandleFunc(&quot;/products/{key}&quot;, ProductHandler)
+s.HandleFunc(&quot;/articles/{category}/{id:[0-9]+}&quot;, ArticleHandler)
+</code></pre>
+
+<p>以上三个URL路径只有当域名为 &ldquo;www.example.com&rdquo;时才会被测试, 因为子路有会首先被测试。这个不仅方便而且优化请求路径。你可以创建子路由结合任意树形的匹配器。</p>
+
+<p>子路经可以用来创建域名或者路径“namespaces”: 你定义子路由在中间位置，然后其余部分可以基于子路由注册自己的路径</p>
+
+<p>还有其他的子路由，当一个子路由有路径前缀时， 内部的路由使用它作为他们的基础：</p>
+
+<pre><code>r := mux.NewRouter()
+s := r.PathPrefix(&quot;/products&quot;).Subrouter()
+//&quot;/products/&quot;
+s.HandleFunc(&quot;/&quot;, ProductHandler)
+// &quot;/products/{key}/&quot;
+s.HandleFunc(&quot;/{key}/&quot;, ProductHandler)
+// &quot;/products/{key}/details&quot;
+s.HandleFunc(&quot;/{key}/details&quot;, ProductDetailsHandler)
+</code></pre>
+
+<p>注意，路径提供给PathPrefix()代表一个“掩码”： 调用PathPrefix(&ldquo;/static/&rdquo;).Handler()意味着处理函数会传递任何请求符合&rdquo;/static/*&ldquo;.这种方式很容易实现静态文件的路由。</p>
+
+<pre><code>func main()
+    var dir string
+    flag.StringVar(&amp;dir, &quot;dir&quot;, &quot;.&quot;, &quot;the directory to serve files from. Defaults to the current dir&quot;)
+    flag.Parse()
+    r := mux.NewRouter()
+    
+    // This will serve files under http://localhost:8000/static/&lt;filename&gt;
+    r.PathPrefix(&quot;/static/&quot;).Handler(http.StripPrefix(&quot;/static/&quot;, http.FileServer(http.Dir(dir))))
+
+	srv := &amp;http.Server{
+		Handler:      r,
+		Addr:         &quot;127.0.0.1:8000&quot;,
+		// Good practice: enforce timeouts for servers you create!
+		WriteTimeout: 15 * time.Second,
+		ReadTimeout:  15 * time.Second,
+	}
+
+	log.Fatal(srv.ListenAndServe())
+}
+</code></pre>
+
+<p>现在我们来看看如何建立注册URL。</p>
+
+<p>路由可以是名称， 所有定义名称的路由可以有自己的URLs， 或者反转。我们定义一个名称通过调用Name()在路由上。例如：</p>
+
+<pre><code>r := mux.NewRouter()
+r.HandleFunc(&quot;/articles/{category}/{id:[0-9]+}&quot;, ArticleHandler).
+Name(&quot;article&quot;)
+</code></pre>
+
+<p>建立URL,获取路由，调用URL()方法，传递一系列的键值对给路由变量。对于之前的路径，我们可以这样做：</p>
+
+<pre><code>url, err := r.Get(&quot;article&quot;).URL(&quot;category&quot;, &quot;technology&quot;, &quot;id&quot;, &quot;42&quot;)
+</code></pre>
+
+<p>&hellip;并且结果会是url.URL带有下面的路径</p>
+
+<pre><code>&quot;/articles/technology/42&quot;
+</code></pre>
+
+<p>这个同样对于主机变量：</p>
+
+<pre><code>r := mux.NewRouter()
+r.Host(&quot;{subdomain}.domain.com&quot;).
+    Path(&quot;/articles/{category}/{id:[0-9]+}&quot;).
+    HandlerFunc(ArticleHandler).
+    Name(&quot;article&quot;)
+
+// url.String() will be &quot;http://news.domain.com/articles/technology/42&quot;
+url, err := r.Get(&quot;article&quot;).URL(&quot;subdomain&quot;, &quot;news&quot;,
+                                 &quot;category&quot;, &quot;technology&quot;,
+                                 &quot;id&quot;, &quot;42&quot;)
+</code></pre>
+
+<p>所有路由中的变量都是必须的，并且他们的值必须服务响应模式/这些需求保证生成的URL会一直符合注册路径 &ndash; 唯一例外的是那些显示定义 “build-only”路由永远都不会匹配。</p>
+
+<p>正则支持也存在于匹配路由中的头。例如，我们可以作：</p>
+
+<pre><code>r.HeaderRegexp(&quot;Content-Type&quot;, &quot;application/(text|json)&quot;)
+</code></pre>
+
+<p>&hellip;路由会匹配请求带有Content-Type为application/json以及application/text的。</p>
+
+<p>同样可以为路由建立只有URL主机或者路径的路由：
+使用方法URLHost()或者URLPath()替代/ 对于之前的路由，我们可以这样做：</p>
+
+<pre><code>// &quot;http://news.domain.com/&quot;
+host, err := r.Get(&quot;article&quot;).URLHost(&quot;subdomain&quot;, &quot;news&quot;)
+
+// &quot;/articles/technology/42&quot;
+path, err := r.Get(&quot;article&quot;).URLPath(&quot;category&quot;, &quot;technology&quot;, &quot;id&quot;, &quot;42&quot;)
+</code></pre>
+
+<p>如果你使用子路由， 主机和路径单独定义可以建立如下：</p>
+
+<pre><code>r := mux.NewRouter()
+s := r.Host(&quot;{subdomain}.domain.com&quot;).Subrouter()
+s.Path(&quot;/articles/{category}/{id:[0-9]+}&quot;).
+  HandlerFunc(ArticleHandler).
+  Name(&quot;article&quot;)
+
+// &quot;http://news.domain.com/articles/technology/42&quot;
+url, err := r.Get(&quot;article&quot;).URL(&quot;subdomain&quot;, &quot;news&quot;,
+                                 &quot;category&quot;, &quot;technology&quot;,
+                                 &quot;id&quot;, &quot;42&quot;)
+</code></pre>
+
+			</div>
+
+			
+				<h2>Comments</h2>
+				<div id="disqus_thread"></div>
+<script type="text/javascript">
+     
+    var disqus_shortname = 'spf13'; 
+
+     
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+			
+		</div>
+
+  </body>
+</html>

@@ -160,12 +160,228 @@ func SetMyKey(r *http.Request, val SomeType){
     </item>
     
     <item>
-      <title>Golang mux study</title>
-      <link>https://qianguozheng.github.io/post/Golang-mux-study/</link>
+      <title>Golang gorilla mux</title>
+      <link>https://qianguozheng.github.io/post/Golang-gorilla-mux/</link>
       <pubDate>Mon, 20 Feb 2017 11:03:48 +0800</pubDate>
       
-      <guid>https://qianguozheng.github.io/post/Golang-mux-study/</guid>
-      <description></description>
+      <guid>https://qianguozheng.github.io/post/Golang-gorilla-mux/</guid>
+      <description>&lt;p&gt;翻译 github.com/gorilla/mux/doc.go&lt;/p&gt;
+
+&lt;p&gt;包mux实现了路由请求与分发。&lt;/p&gt;
+
+&lt;p&gt;mux代表“HTTP请求多路复用”。 像标准的http.ServeMux, mux.Router匹配进来的请求和一些注册的路径， 并且调用处理函数来处理匹配URL或其他条件的。 主要特色如下：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;请求可以基于URL主机， 路径，路径前缀， schemes, 头，请求值， HTTP方法或者特定的匹配方式。&lt;/li&gt;
+&lt;li&gt;URL主机可路径可以通过可选的正则表达式来匹配。&lt;/li&gt;
+&lt;li&gt;Registered URLs can be built, or &amp;ldquo;reversed&amp;rdquo;, which helps maintaining references to resources.&lt;/li&gt;
+&lt;li&gt;路由可以作为子路由： 子路由仅仅当父路由匹配的时候才会比对。 这种方式可以定义遗嘱路径拥有共同的条件特征，如主机，路径牵住，或者其他的重复属性。 额外的，这个优化请求匹配。&lt;/li&gt;
+&lt;li&gt;实现了http.Handler接口所以这个和标准的http.ServeMux兼容&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;我们来注册一些URL路径和处理函数：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;func main(){
+    r := mux.NewRouter()
+    r.HandleFunc(&amp;quot;/&amp;quot;, HomeHandler)
+    r.HandleFunc(&amp;quot;/products&amp;quot;, ProductsHandler)
+    r.HandleFunc(&amp;quot;/articles&amp;quot;, ArticlesHandler)
+    http.Handle(&amp;quot;/&amp;quot;, r)
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;我们注册了3个路径映射URL给处理函数。这个与http.HandleFunc()类似: 如果一个请求的URL符合路径，相应的处理函数被调用， 以(http.ResponseWriter, *http.Request)作为参数。&lt;/p&gt;
+
+&lt;p&gt;路径可以有变量。 他们定义使用这种格式 {name} 或者 {name:pattern}. 如果一个正常的表达模式未被定义， 匹配的变量将会是任何值，直到下一个斜线。例如：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;r := mux.NewRouter()
+r.HandleFunc(&amp;quot;/products/{key}&amp;quot;, ProductHandler)
+r.HandleFunc(&amp;quot;/articles/{category}/&amp;quot;, ArticlesCategoryHandler)
+r.HandleFunc(&amp;quot;/articles/{category}/{id:[0-9]+}&amp;quot;, ArticleHandler)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;组可以在模式内使用，只要没有捕捉(?:re). 例如：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;r.HandleFunc(&amp;quot;/articles/{category}/{sort:(?:asc|desc|new)}&amp;quot;, ArticleCategoryHandler)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;名字可以用来创建一组路由变量的映射，可以通过调用mux.Vars()获得：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;vars := mux.Vars(request)
+category := vars[&amp;quot;category&amp;quot;]
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;如果任何的capturing组存在， mux会panic()在解析的过程中。阻止这种情况发生，转换任何的capturing组为非capturing，例如 转换&amp;rdquo;/{sort:(asc|desc)}&amp;ldquo;为&amp;rdquo;/{sort:{?:asc|dest}}&amp;ldquo;. 这是从之前的不可预测的行为转换来的当capturing组存在的时候。&lt;/p&gt;
+
+&lt;p&gt;这就是所有你需要知道的基础。更高级的选项在下面解释。&lt;/p&gt;
+
+&lt;p&gt;路由同样可以限制一个域名或者子域名。 定义一个主机模式来匹配， 他们同样可以有变量：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;r := mux.NewRouter()
+//Only matches if domain is &amp;quot;www.example.com&amp;quot;.
+r.Host(&amp;quot;www.example.com&amp;quot;)
+//Matches a dynamic subdomain.
+r.Host(&amp;quot;{subdomain:[a-z]+}.domain.com&amp;quot;)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;还有其他几种匹配可以添加，来匹配这种路径前缀：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;r.PathPrefix(&amp;quot;/products/&amp;quot;)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;&amp;hellip;或者HTTP方法&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;r.Methods(&amp;quot;GET&amp;quot;, &amp;quot;POST&amp;quot;)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;&amp;hellip;或者 URL schemes:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;r.Schemes(&amp;quot;https&amp;quot;)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;&amp;hellip;或者 头部值&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;r.Headers(&amp;quot;X-Requested-With&amp;quot;, &amp;quot;XMLHttpRequest&amp;quot;)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;&amp;hellip;或者 请求值&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;r.Queries(&amp;quot;key&amp;quot;, &amp;quot;value&amp;quot;)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;&amp;hellip;或者 使用定制匹配函数&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;r.MatcherFunc(func(r *http.Request, rm *RouteMatch) bool{
+    return r.ProtoMajor == 0
+})
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;&amp;hellip;最终， 也可以组合几种匹配到一个路由中：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;r.HandleFunc(&amp;quot;/products&amp;quot;, ProductsHandler).
+    Host(&amp;quot;www.example.com&amp;quot;).
+    Methods(&amp;quot;GET&amp;quot;).
+    Schemes(&amp;quot;http&amp;quot;)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;一遍又一遍的设置同样的路径很烦人， 所以我们可以使用组来共享满足相同条件的路由：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;r := mux.NewRouter()
+s := r.Host(&amp;quot;www.example.com&amp;quot;).Subrouter()
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;然在在路由中注册子路由：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;s.HandleFunc(&amp;quot;/products/&amp;quot;, ProductsHandler)
+s.HandleFunc(&amp;quot;/products/{key}&amp;quot;, ProductHandler)
+s.HandleFunc(&amp;quot;/articles/{category}/{id:[0-9]+}&amp;quot;, ArticleHandler)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;以上三个URL路径只有当域名为 &amp;ldquo;www.example.com&amp;rdquo;时才会被测试, 因为子路有会首先被测试。这个不仅方便而且优化请求路径。你可以创建子路由结合任意树形的匹配器。&lt;/p&gt;
+
+&lt;p&gt;子路经可以用来创建域名或者路径“namespaces”: 你定义子路由在中间位置，然后其余部分可以基于子路由注册自己的路径&lt;/p&gt;
+
+&lt;p&gt;还有其他的子路由，当一个子路由有路径前缀时， 内部的路由使用它作为他们的基础：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;r := mux.NewRouter()
+s := r.PathPrefix(&amp;quot;/products&amp;quot;).Subrouter()
+//&amp;quot;/products/&amp;quot;
+s.HandleFunc(&amp;quot;/&amp;quot;, ProductHandler)
+// &amp;quot;/products/{key}/&amp;quot;
+s.HandleFunc(&amp;quot;/{key}/&amp;quot;, ProductHandler)
+// &amp;quot;/products/{key}/details&amp;quot;
+s.HandleFunc(&amp;quot;/{key}/details&amp;quot;, ProductDetailsHandler)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;注意，路径提供给PathPrefix()代表一个“掩码”： 调用PathPrefix(&amp;ldquo;/static/&amp;rdquo;).Handler()意味着处理函数会传递任何请求符合&amp;rdquo;/static/*&amp;ldquo;.这种方式很容易实现静态文件的路由。&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;func main()
+    var dir string
+    flag.StringVar(&amp;amp;dir, &amp;quot;dir&amp;quot;, &amp;quot;.&amp;quot;, &amp;quot;the directory to serve files from. Defaults to the current dir&amp;quot;)
+    flag.Parse()
+    r := mux.NewRouter()
+    
+    // This will serve files under http://localhost:8000/static/&amp;lt;filename&amp;gt;
+    r.PathPrefix(&amp;quot;/static/&amp;quot;).Handler(http.StripPrefix(&amp;quot;/static/&amp;quot;, http.FileServer(http.Dir(dir))))
+
+	srv := &amp;amp;http.Server{
+		Handler:      r,
+		Addr:         &amp;quot;127.0.0.1:8000&amp;quot;,
+		// Good practice: enforce timeouts for servers you create!
+		WriteTimeout: 15 * time.Second,
+		ReadTimeout:  15 * time.Second,
+	}
+
+	log.Fatal(srv.ListenAndServe())
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;现在我们来看看如何建立注册URL。&lt;/p&gt;
+
+&lt;p&gt;路由可以是名称， 所有定义名称的路由可以有自己的URLs， 或者反转。我们定义一个名称通过调用Name()在路由上。例如：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;r := mux.NewRouter()
+r.HandleFunc(&amp;quot;/articles/{category}/{id:[0-9]+}&amp;quot;, ArticleHandler).
+Name(&amp;quot;article&amp;quot;)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;建立URL,获取路由，调用URL()方法，传递一系列的键值对给路由变量。对于之前的路径，我们可以这样做：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;url, err := r.Get(&amp;quot;article&amp;quot;).URL(&amp;quot;category&amp;quot;, &amp;quot;technology&amp;quot;, &amp;quot;id&amp;quot;, &amp;quot;42&amp;quot;)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;&amp;hellip;并且结果会是url.URL带有下面的路径&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;&amp;quot;/articles/technology/42&amp;quot;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;这个同样对于主机变量：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;r := mux.NewRouter()
+r.Host(&amp;quot;{subdomain}.domain.com&amp;quot;).
+    Path(&amp;quot;/articles/{category}/{id:[0-9]+}&amp;quot;).
+    HandlerFunc(ArticleHandler).
+    Name(&amp;quot;article&amp;quot;)
+
+// url.String() will be &amp;quot;http://news.domain.com/articles/technology/42&amp;quot;
+url, err := r.Get(&amp;quot;article&amp;quot;).URL(&amp;quot;subdomain&amp;quot;, &amp;quot;news&amp;quot;,
+                                 &amp;quot;category&amp;quot;, &amp;quot;technology&amp;quot;,
+                                 &amp;quot;id&amp;quot;, &amp;quot;42&amp;quot;)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;所有路由中的变量都是必须的，并且他们的值必须服务响应模式/这些需求保证生成的URL会一直符合注册路径 &amp;ndash; 唯一例外的是那些显示定义 “build-only”路由永远都不会匹配。&lt;/p&gt;
+
+&lt;p&gt;正则支持也存在于匹配路由中的头。例如，我们可以作：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;r.HeaderRegexp(&amp;quot;Content-Type&amp;quot;, &amp;quot;application/(text|json)&amp;quot;)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;&amp;hellip;路由会匹配请求带有Content-Type为application/json以及application/text的。&lt;/p&gt;
+
+&lt;p&gt;同样可以为路由建立只有URL主机或者路径的路由：
+使用方法URLHost()或者URLPath()替代/ 对于之前的路由，我们可以这样做：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;// &amp;quot;http://news.domain.com/&amp;quot;
+host, err := r.Get(&amp;quot;article&amp;quot;).URLHost(&amp;quot;subdomain&amp;quot;, &amp;quot;news&amp;quot;)
+
+// &amp;quot;/articles/technology/42&amp;quot;
+path, err := r.Get(&amp;quot;article&amp;quot;).URLPath(&amp;quot;category&amp;quot;, &amp;quot;technology&amp;quot;, &amp;quot;id&amp;quot;, &amp;quot;42&amp;quot;)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;如果你使用子路由， 主机和路径单独定义可以建立如下：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;r := mux.NewRouter()
+s := r.Host(&amp;quot;{subdomain}.domain.com&amp;quot;).Subrouter()
+s.Path(&amp;quot;/articles/{category}/{id:[0-9]+}&amp;quot;).
+  HandlerFunc(ArticleHandler).
+  Name(&amp;quot;article&amp;quot;)
+
+// &amp;quot;http://news.domain.com/articles/technology/42&amp;quot;
+url, err := r.Get(&amp;quot;article&amp;quot;).URL(&amp;quot;subdomain&amp;quot;, &amp;quot;news&amp;quot;,
+                                 &amp;quot;category&amp;quot;, &amp;quot;technology&amp;quot;,
+                                 &amp;quot;id&amp;quot;, &amp;quot;42&amp;quot;)
+&lt;/code&gt;&lt;/pre&gt;
+</description>
     </item>
     
     <item>
