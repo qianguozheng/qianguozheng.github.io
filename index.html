@@ -855,13 +855,15 @@ module_exit(recent_mt_exit);
 
 </code></pre>
 
-<p>存储结构为:
- Table(Hash Table)
-   |&mdash;&mdash;&mdash;- entry (ip:192.168.4.12)
-   |&mdash;&mdash;&ndash; entry (ip:192.168.4.33)
-   |&mdash;&mdash;<br />
-   |&mdash;&mdash;&ndash;
-   |&mdash;&mdash;&mdash;</p>
+<p>存储结构为:</p>
+
+<pre><code>Table(Hash Table)
+    |---------- entry (ip:192.168.4.12)
+    |-------- entry (ip:192.168.4.33)
+    |------  
+    |--------
+    |---------
+</code></pre>
 
 <p>简单理解，就是使用hash表存储每个IP地址经过的数据包数量， 每个IP代表一个entry, 也是一个链表。
 所以这个结构就: 是通过hash查找特定的IP,然后遍历列表计算超时数据包和命中数是否满足，并执行相应
