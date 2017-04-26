@@ -15,11 +15,19 @@
       <pubDate>Wed, 26 Apr 2017 17:50:36 +0800</pubDate>
       
       <guid>https://qianguozheng.github.io/post/netfilter-xt_recent/</guid>
-      <description>&lt;p&gt;#Netfilter xt_recent module analyze&lt;/p&gt;
+      <description>
+
+&lt;h1 id=&#34;netfilter-xt-recent-module-analyze:d79594fadda94ba7baebfd50201d276f&#34;&gt;Netfilter xt_recent module analyze&lt;/h1&gt;
 
 &lt;p&gt;xt_recent模块用来记录最近的几次请求，并对其做特定规则处理，超过的则做另外的处理。&lt;/p&gt;
 
-&lt;p&gt;下面来分析下这个内核模块的实现，学习下如何编写Netfilter内核模块。&lt;/p&gt;
+&lt;p&gt;Netfilter模块有两个简单拓展模块， match, target.
+match - 指的是 -m xxxx, 例如-m recent, -m tcp 等。
+target - 指的是 REDIRECT, ACCEPT, DROP 等。&lt;/p&gt;
+
+&lt;p&gt;这里分析的就是match模块。&lt;/p&gt;
+
+&lt;p&gt;下面来分析下这个内核模块的实现，学习下如何编写Netfilter内核模块, 注意看里面的注释。&lt;/p&gt;
 
 &lt;pre&gt;&lt;code&gt;/*
  * Copyright (c) 2006 Patrick McHardy &amp;lt;kaber@trash.net&amp;gt;
@@ -789,6 +797,12 @@ module_exit(recent_mt_exit);
    |&amp;mdash;&amp;mdash;&lt;br /&gt;
    |&amp;mdash;&amp;mdash;&amp;ndash;
    |&amp;mdash;&amp;mdash;&amp;mdash;&lt;/p&gt;
+
+&lt;p&gt;简单理解，就是使用hash表存储每个IP地址经过的数据包数量， 每个IP代表一个entry, 也是一个链表。
+所以这个结构就: 是通过hash查找特定的IP,然后遍历列表计算超时数据包和命中数是否满足，并执行相应
+的target.&lt;/p&gt;
+
+&lt;p&gt;用hash表的原因在于，IP的数量很多的时候可以直接找到IP，而不需要通过遍历整个链表，提升查找效率。&lt;/p&gt;
 </description>
     </item>
     
