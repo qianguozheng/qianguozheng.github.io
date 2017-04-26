@@ -861,6 +861,13 @@ module_exit(recent_mt_exit);
 
 <p>用hash表的原因在于，IP的数量很多的时候可以直接找到IP，而不需要通过遍历整个链表，提升查找效率。</p>
 
+<p>使用recent模块的样例： 目的60s内单个ip匹配20个数据包连接，超过的接受，不超过的重定向到3128端口。</p>
+
+<pre><code>	iptables -t nat -N SQUID
+	iptables -t nat -I SQUID -p tcp --dport 80 --syn -m recent --name webpool --rcheck --seconds 60 --hitcount 20 -j ACCEPT
+	iptables -t nat -I SQUID -p tcp --dport 80 --syn -m recent --name webpool --set -j REDIRECT --to-ports 3128
+</code></pre>
+
 			</div>
 
 			
