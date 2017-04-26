@@ -6,8 +6,38 @@
     <description>Recent content in Development on 钱国正博客</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Thu, 23 Feb 2017 17:26:24 +0800</lastBuildDate>
+    <lastBuildDate>Wed, 26 Apr 2017 16:24:12 +0800</lastBuildDate>
     <atom:link href="https://qianguozheng.github.io/categories/development/index.xml" rel="self" type="application/rss+xml" />
+    
+    <item>
+      <title>Linux getsockopt sample usage</title>
+      <link>https://qianguozheng.github.io/content/post/Linux-getsockopt-sample-usage/</link>
+      <pubDate>Wed, 26 Apr 2017 16:24:12 +0800</pubDate>
+      
+      <guid>https://qianguozheng.github.io/content/post/Linux-getsockopt-sample-usage/</guid>
+      <description>
+
+&lt;h1 id=&#34;linux-getsockopt-sample-usage:43cd2fcc3caa990aab8ea1183ae04ce2&#34;&gt;Linux getsockopt sample usage&lt;/h1&gt;
+
+&lt;pre&gt;&lt;code&gt;	#include &amp;lt;linux/netfilter_ipv4.h&amp;gt; //SO_ORIGINAL_DST
+	//Get the target ip and port address
+	 int status;
+	 socklen_t destlen;
+	 struct sockaddr_in destaddr;
+	 char destinationName[256];
+	 int port;
+	 memset(destinationName, 0, 256);
+	 
+	 status = getsockopt(afd, IPPROTO_IP, SO_ORIGINAL_DST, (struct sockaddr *) &amp;amp;destaddr, &amp;amp;destlen);
+	 inet_ntop(AF_INET, (void *)&amp;amp;destaddr.sin_addr, destinationName, sizeof(destinationName));
+	 port = ntohs(destaddr.sin_port);
+	 
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;pre&gt;&lt;code&gt;这里的SO_ORIGINAL_DST是用于netfilter REDIRECT target重定向过的数据包中的。
+&lt;/code&gt;&lt;/pre&gt;
+</description>
+    </item>
     
     <item>
       <title>Golang gorilla context doc</title>

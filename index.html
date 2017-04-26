@@ -54,6 +54,8 @@
       
         <li><a href="/post/Golang-session-problem/"> Golang session problem </a></li>
       
+        <li><a href="/content/post/Linux-getsockopt-sample-usage/"> Linux getsockopt sample usage </a></li>
+      
         <li><a href="/post/hugo-deploy-as-submodule-on-github/"> hugo deploy as submodule on github </a></li>
       
     </ul>
@@ -67,6 +69,39 @@
 <div class="posts">
 
       
+  <div class="post">
+    <h1 class="post-title">
+      <a href="https://qianguozheng.github.io/content/post/Linux-getsockopt-sample-usage/">
+        Linux getsockopt sample usage
+      </a>
+    </h1>
+
+    <span class="post-date">Wed, Apr 26, 2017</span>
+
+    
+
+<h1 id="linux-getsockopt-sample-usage:43cd2fcc3caa990aab8ea1183ae04ce2">Linux getsockopt sample usage</h1>
+
+<pre><code>	#include &lt;linux/netfilter_ipv4.h&gt; //SO_ORIGINAL_DST
+	//Get the target ip and port address
+	 int status;
+	 socklen_t destlen;
+	 struct sockaddr_in destaddr;
+	 char destinationName[256];
+	 int port;
+	 memset(destinationName, 0, 256);
+	 
+	 status = getsockopt(afd, IPPROTO_IP, SO_ORIGINAL_DST, (struct sockaddr *) &amp;destaddr, &amp;destlen);
+	 inet_ntop(AF_INET, (void *)&amp;destaddr.sin_addr, destinationName, sizeof(destinationName));
+	 port = ntohs(destaddr.sin_port);
+	 
+</code></pre>
+
+<pre><code>这里的SO_ORIGINAL_DST是用于netfilter REDIRECT target重定向过的数据包中的。
+</code></pre>
+
+  </div>
+  
   <div class="post">
     <h1 class="post-title">
       <a href="https://qianguozheng.github.io/post/Golang-gorilla-context-doc/">
