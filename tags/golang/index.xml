@@ -6,8 +6,124 @@
     <description>Recent content in Golang on 钱国正博客</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Wed, 26 Apr 2017 17:50:36 +0800</lastBuildDate>
+    <lastBuildDate>Fri, 18 May 2018 14:41:06 +0800</lastBuildDate>
     <atom:link href="https://qianguozheng.github.io/tags/golang/index.xml" rel="self" type="application/rss+xml" />
+    
+    <item>
+      <title>golang iotuils devnull deserve deep thinking</title>
+      <link>https://qianguozheng.github.io/post/golang-iotuils-devnull-deserve-deep-thinking/</link>
+      <pubDate>Fri, 18 May 2018 14:41:06 +0800</pubDate>
+      
+      <guid>https://qianguozheng.github.io/post/golang-iotuils-devnull-deserve-deep-thinking/</guid>
+      <description>&lt;p&gt;&lt;a href=&#34;https://golang.org/src/io/ioutil/ioutil.go&#34;&gt;!ioutils源码地址&lt;/a&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;type devNull int
+
+
+// devNull implements ReaderFrom as an optimization so io.Copy to
+
+// ioutil.Discard can avoid doing unnecessary work.
+
+var _ io.ReaderFrom = devNull(0)
+
+
+func (devNull) Write(p []byte) (int, error) {
+
+	return len(p), nil
+
+}
+
+
+func (devNull) WriteString(s string) (int, error) {
+
+	return len(s), nil
+
+}
+
+
+var blackHolePool = sync.Pool{
+
+	New: func() interface{} {
+
+		b := make([]byte, 8192)
+
+		return &amp;amp;b
+
+	},
+
+}
+
+
+func (devNull) ReadFrom(r io.Reader) (n int64, err error) {
+
+	bufp := blackHolePool.Get().(*[]byte)
+
+	readSize := 0
+
+	for {
+
+		readSize, err = r.Read(*bufp)
+
+		n += int64(readSize)
+
+		if err != nil {
+
+			blackHolePool.Put(bufp)
+
+			if err == io.EOF {
+
+				return n, nil
+
+			}
+
+			return
+
+		}
+
+	}
+
+}
+
+
+// Discard is an io.Writer on which all Write calls succeed
+
+// without doing anything.
+
+var Discard io.Writer = devNull(0)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;使用样例，说到底这个devNull到底有什么用呢？ 模拟一个黑洞，用来吃数据，而且黑洞是接口类型，
+这个就是我能想到的仅有的解释了。&lt;/p&gt;
+
+&lt;p&gt;说实话，我自认为对于Go的语法已经懂得的不少了，但是看到了这些package的实现，还是觉得自己
+太自已为是了。&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;var Discard io.Writer = devNull(0)&lt;/code&gt;  //这个定义以及初始化我就没这个想象力！&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;var _ io.ReaderFrom = devNull(0)&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;//这个定义又如何理解呢？ 没有定义变量，想说明什么？ 让devNull必须实现ReadFrom方法？
+//这是我能想到的唯一目的了。&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;    package main  
+      
+    import (  
+        &amp;quot;fmt&amp;quot;  
+        &amp;quot;io&amp;quot;  
+        &amp;quot;io/ioutil&amp;quot;  
+        &amp;quot;strings&amp;quot;  
+    )  
+      
+    func main() {  
+        a := strings.NewReader(&amp;quot;hello&amp;quot;)  
+        p := make([]byte, 20)  
+        io.Copy(ioutil.Discard, a)  
+        ioutil.Discard.Write(p)  
+        fmt.Println(p)　　　　　　//[0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]  
+    }  
+&lt;/code&gt;&lt;/pre&gt;
+</description>
+    </item>
     
     <item>
       <title>netfilter xt_recent</title>

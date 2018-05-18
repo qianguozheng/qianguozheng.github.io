@@ -9,7 +9,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
 
   
-  <title>Golang gorilla context doc &middot; 钱国正博客</title>
+  <title>golang iotuils devnull deserve deep thinking &middot; 钱国正博客</title>
   
 
 <link rel="stylesheet" href="/css/monokai.css">
@@ -70,85 +70,115 @@
 
 		<div class="content container">
 			<div class="post">
-			 	<h1>Golang gorilla context doc</h1>
-			  <span class="post-date">Thu, Feb 23, 2017</span>
-			      <p>翻译 github.com/gorilla/context/doc.go</p>
+			 	<h1>golang iotuils devnull deserve deep thinking</h1>
+			  <span class="post-date">Fri, May 18, 2018</span>
+			      <p><a href="https://golang.org/src/io/ioutil/ioutil.go">!ioutils源码地址</a></p>
 
-<p>包context存储的值在一个请求的声明周期中是共享的。</p>
+<pre><code>type devNull int
 
-<blockquote>
-<p>注意：gorilla/context, 比<code>context.Context</code>诞生的早，不能很好的支持<a href="https://golang.org/pkg/net/http/#Request.WithContext"><code>http.Request.WithContext</code></a> (引入于Go1.7). 你应该只使用gorilla/context或者换到新的 <code>http.Request.Context()</code>.</p>
-</blockquote>
 
-<p>例如， 一个路由可以设置从URL中提取出来的变量， 并且程序的处理者可以访问这些值， 或者这个可以用来存储会话值在请求的最后。还有集中其他的常用方法。</p>
+// devNull implements ReaderFrom as an optimization so io.Copy to
 
-<p>这个想法是Brad Fitzpatrick在go-nuts的邮件列表中提出的：</p>
+// ioutil.Discard can avoid doing unnecessary work.
 
-<pre><code>    http://groups.google.com/group/golang-nuts/msg/e2d679d303aa5d53
-</code></pre>
+var _ io.ReaderFrom = devNull(0)
 
-<p>这里是基础用法： 首先定义你需要的键。 键的类型是interface{} 所以你可以存储任何类型。</p>
 
-<p>这里我们定义一个键使用常用的int类型来必买名称冲突：</p>
+func (devNull) Write(p []byte) (int, error) {
 
-<pre><code>package foo
+	return len(p), nil
 
-import (
-    &quot;github.com/gorilla/context&quot;
-)
-
-type key int
-
-const MyKey key = 0
-</code></pre>
-
-<p>然后设置一个变量。 变量是绑定到http.Request对象的， 所以你需要请求的实例来设置值：</p>
-
-<pre><code>context.Set(r, MyKey, &quot;bar&quot;)
-</code></pre>
-
-<p>程序可以后续使用你提供的键来访问变量：</p>
-
-<pre><code>func MyHandler(w http.ResponseWriter, r *http.Request){
-    // val is &quot;bar&quot;.
-    val := context.Get(r, foo.MyKey)
-
-    // returns (&quot;bar&quot;, true)
-    val, ok := context.GetOk(r, foo.MyKey)
-    //...
-}
-</code></pre>
-
-<p>这是最基础的使用方式。 我们在下面讨论一些别的用法。</p>
-
-<p>所有类型都可以存储在context中。强制使用一种类型， 把键变得私用，并且包裹Get() 和Set()来接受和返回特定类型的值：</p>
-
-<pre><code>type key int
-
-const mykey key = 0
-
-// GetMyKey returns a value for this package from the request values.
-func GetMyKey(r *http.Request) SomeType{
-    if rv := context.Get(r, mykey); rv != nil {
-        return rv.(SomeType)
-    }
-    return nil
 }
 
-// SetMyKey sets a value for this package in the request values.
-func SetMyKey(r *http.Request, val SomeType){
-    context.Set(r, mykey, val)
+
+func (devNull) WriteString(s string) (int, error) {
+
+	return len(s), nil
+
 }
+
+
+var blackHolePool = sync.Pool{
+
+	New: func() interface{} {
+
+		b := make([]byte, 8192)
+
+		return &amp;b
+
+	},
+
+}
+
+
+func (devNull) ReadFrom(r io.Reader) (n int64, err error) {
+
+	bufp := blackHolePool.Get().(*[]byte)
+
+	readSize := 0
+
+	for {
+
+		readSize, err = r.Read(*bufp)
+
+		n += int64(readSize)
+
+		if err != nil {
+
+			blackHolePool.Put(bufp)
+
+			if err == io.EOF {
+
+				return n, nil
+
+			}
+
+			return
+
+		}
+
+	}
+
+}
+
+
+// Discard is an io.Writer on which all Write calls succeed
+
+// without doing anything.
+
+var Discard io.Writer = devNull(0)
 </code></pre>
 
-<p>变量必须在请求的结尾清除，以删除所有存储的值。这个可以在http.Handler中做， 在请求被处理的时候。 只需要调用Clear()</p>
+<p>使用样例，说到底这个devNull到底有什么用呢？ 模拟一个黑洞，用来吃数据，而且黑洞是接口类型，
+这个就是我能想到的仅有的解释了。</p>
 
-<pre><code>context.Clear(r)
+<p>说实话，我自认为对于Go的语法已经懂得的不少了，但是看到了这些package的实现，还是觉得自己
+太自已为是了。</p>
+
+<p><code>var Discard io.Writer = devNull(0)</code>  //这个定义以及初始化我就没这个想象力！</p>
+
+<p><code>var _ io.ReaderFrom = devNull(0)</code></p>
+
+<p>//这个定义又如何理解呢？ 没有定义变量，想说明什么？ 让devNull必须实现ReadFrom方法？
+//这是我能想到的唯一目的了。</p>
+
+<pre><code>    package main  
+      
+    import (  
+        &quot;fmt&quot;  
+        &quot;io&quot;  
+        &quot;io/ioutil&quot;  
+        &quot;strings&quot;  
+    )  
+      
+    func main() {  
+        a := strings.NewReader(&quot;hello&quot;)  
+        p := make([]byte, 20)  
+        io.Copy(ioutil.Discard, a)  
+        ioutil.Discard.Write(p)  
+        fmt.Println(p)　　　　　　//[0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]  
+    }  
 </code></pre>
-
-<p>&hellip;或者使用 ClearHandler(), 这个方便的包裹来一个http.Handler在请求声明周期的末尾来请求变量</p>
-
-<p>包gorilla/mux 和gorilla/pat中的路由调用Clear()所以如果你使用他们中的一个，你不需要手动清除上下文。</p>
 
 			</div>
 
