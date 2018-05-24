@@ -9,7 +9,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
 
   
-  <title>Golang session problem &middot; 钱国正博客</title>
+  <title>go ethereum create your own account &middot; 钱国正博客</title>
   
 
 <link rel="stylesheet" href="/css/monokai.css">
@@ -72,77 +72,38 @@
 
 		<div class="content container">
 			<div class="post">
-			 	<h1>Golang session problem</h1>
-			  <span class="post-date">Sun, Feb 19, 2017</span>
-			      
+			 	<h1>go ethereum create your own account</h1>
+			  <span class="post-date">Wed, May 23, 2018</span>
+			      <p>最近两天一直搜索哪里有开源的Go实现的Ethereum的钱包，但是发现其实那么多的开源项目并没有
+符合我想看的，兜兜转转，还是看了go-ethereum的源码，然后在stackoverflow上看到了下面的
+实现，值得一试。</p>
 
-<h1 id="golang-session-using-problem:3689b5210b345acfc0507cf19690ede1">Golang Session using problem</h1>
+<p><a href="https://ethereum.stackexchange.com/questions/39900/create-ethereum-account-using-golang">stackoverflow</a></p>
 
-<p>以前从事嵌入式工作，没有做过多用户的处理，比如web服务器上后台管理人员与普通用户的区别。</p>
+<pre><code>package main
 
-<p>最近自己在写一个认证服务器的简单管理功能，想优化下就增加了admin管理权限。</p>
+import &quot;github.com/ethereum/go-ethereum/crypto&quot;
+import &quot;encoding/hex&quot;
+import &quot;fmt&quot;
 
-<h2 id="初步设计:3689b5210b345acfc0507cf19690ede1">初步设计</h2>
-
-<p>通过通过mux来管理路由。然后在访问/admin/路径下的API时需要检测是否登陆。</p>
-
-<h2 id="实现中遇到的问题:3689b5210b345acfc0507cf19690ede1">实现中遇到的问题</h2>
-
-<ol>
-<li>mux的具体实现不知道，需要进一步了解，今后的文章要分析透彻。</li>
-<li>google了很多的管理登陆的文章，发现都是需要在处理的API内部做判断登陆，这点我感觉繁琐了，增加一个中间件不就好了吗，但是怎么增加是一个问题。</li>
-<li>另外一个就是session的使用中遇到的了，我明明增加了session，但是就是没有收到数据。</li>
-</ol>
-
-<h2 id="中间件验证登陆解决方案:3689b5210b345acfc0507cf19690ede1">中间件验证登陆解决方案</h2>
-
-<p>通过mux建立路由，所有访问/admin/目录下的请求需要先验证是否登陆，即判断是否存在session。</p>
-
-<p>只需要</p>
-
-<pre><code>    router := mux.NewRouter()
-	adminRoutes := mux.NewRouter()
-
-	router.HandleFunc(&quot;/&quot;, index)
-
-	adminRoutes.HandleFunc(&quot;/admin/&quot;, adminIndex)
-	...
+func main() {
 	
-	router.PathPrefix(&quot;/admin&quot;).Handler(negroni.New(
-		NewCheckLogin(),
-		negroni.Wrap(adminRoutes),
-	))
-	// /account/login
-	router.HandleFunc(&quot;/account/login&quot;, login)
-	http.ListenAndServe(&quot;:8080&quot;, router)
-</code></pre>
+	//Create an account
+	key, err := crypto.GenerateKey()
+	if err != nil {
+		fmt.Println(&quot;Error: &quot;, err.Error());
+	}
+	
+	//Get the address
+	address := crypto.PubkeyToAddress(key.PublicKey).Hex()
+	fmt.Printf(&quot;address[%d][%v]\n&quot;, len(address), address);
+	
+	//Get the private key
+	privateKey := hex.EncodeToString(key.D.Bytes())
+	fmt.Printf(&quot;privateKey[%d][%v]\n&quot;, len(privateKey), privateKey);
+	
+}
 
-<p>negroni.New(New)eckLogin(),negroni.Wrap(adminRoutes)
-这句是进行验证的，具体原理还是需要去研究下，目前不是非常的明白。</p>
-
-<h2 id="session的使用比较奇怪-也是需要后续去学习领悟的地方:3689b5210b345acfc0507cf19690ede1">Session的使用比较奇怪，也是需要后续去学习领悟的地方。</h2>
-
-<p>除go基本类型外，复杂对象结构存储必须先注册。</p>
-
-<pre><code>import(
-        &quot;encoding/gob&quot;
-        &quot;github.com/gorilla/sessions&quot;
-    )
-
-    type Person struct {
-        FirstName   string
-        LastName    string
-        Email       string
-        Age         int
-    }
-
-    type M map[string]interface{}
-
-    func init() {
-
-        gob.Register(&amp;Person{})
-        gob.Register(&amp;M{})
-    }
 </code></pre>
 
 			</div>

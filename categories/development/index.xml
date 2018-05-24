@@ -6,8 +6,48 @@
     <description>Recent content in Development on 钱国正博客</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Fri, 18 May 2018 14:41:06 +0800</lastBuildDate>
+    <lastBuildDate>Wed, 23 May 2018 16:57:20 +0800</lastBuildDate>
     <atom:link href="https://qianguozheng.github.io/categories/development/index.xml" rel="self" type="application/rss+xml" />
+    
+    <item>
+      <title>go ethereum create your own account</title>
+      <link>https://qianguozheng.github.io/post/go-ethereum-create-your-own-account/</link>
+      <pubDate>Wed, 23 May 2018 16:57:20 +0800</pubDate>
+      
+      <guid>https://qianguozheng.github.io/post/go-ethereum-create-your-own-account/</guid>
+      <description>&lt;p&gt;最近两天一直搜索哪里有开源的Go实现的Ethereum的钱包，但是发现其实那么多的开源项目并没有
+符合我想看的，兜兜转转，还是看了go-ethereum的源码，然后在stackoverflow上看到了下面的
+实现，值得一试。&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&#34;https://ethereum.stackexchange.com/questions/39900/create-ethereum-account-using-golang&#34;&gt;stackoverflow&lt;/a&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;package main
+
+import &amp;quot;github.com/ethereum/go-ethereum/crypto&amp;quot;
+import &amp;quot;encoding/hex&amp;quot;
+import &amp;quot;fmt&amp;quot;
+
+func main() {
+	
+	//Create an account
+	key, err := crypto.GenerateKey()
+	if err != nil {
+		fmt.Println(&amp;quot;Error: &amp;quot;, err.Error());
+	}
+	
+	//Get the address
+	address := crypto.PubkeyToAddress(key.PublicKey).Hex()
+	fmt.Printf(&amp;quot;address[%d][%v]\n&amp;quot;, len(address), address);
+	
+	//Get the private key
+	privateKey := hex.EncodeToString(key.D.Bytes())
+	fmt.Printf(&amp;quot;privateKey[%d][%v]\n&amp;quot;, len(privateKey), privateKey);
+	
+}
+
+&lt;/code&gt;&lt;/pre&gt;
+</description>
+    </item>
     
     <item>
       <title>Golang iotuils devnull deserve deep thinking</title>
