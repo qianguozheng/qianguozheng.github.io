@@ -9,7 +9,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
 
   
-  <title>Golang iotuils devnull deserve deep thinking &middot; 钱国正博客</title>
+  <title>go ethereum crypto private public key &middot; 钱国正博客</title>
   
 
 <link rel="stylesheet" href="/css/monokai.css">
@@ -74,115 +74,42 @@
 
 		<div class="content container">
 			<div class="post">
-			 	<h1>Golang iotuils devnull deserve deep thinking</h1>
-			  <span class="post-date">Fri, May 18, 2018</span>
-			      <p><a href="https://golang.org/src/io/ioutil/ioutil.go">ioutils源码地址</a></p>
+			 	<h1>go ethereum crypto private public key</h1>
+			  <span class="post-date">Thu, May 24, 2018</span>
+			      
 
-<pre><code>type devNull int
+<h3 id="1-生成ethereum地址:201e9feaaf52691e7c8e8295bf28af74">1. 生成Ethereum地址：</h3>
 
+<pre><code>key, _ := crypto.GenerateKey()
 
-// devNull implements ReaderFrom as an optimization so io.Copy to
+address := crypto.PubkeyToAddress(key.PublicKey).Hex()
 
-// ioutil.Discard can avoid doing unnecessary work.
-
-var _ io.ReaderFrom = devNull(0)
-
-
-func (devNull) Write(p []byte) (int, error) {
-
-	return len(p), nil
-
-}
-
-
-func (devNull) WriteString(s string) (int, error) {
-
-	return len(s), nil
-
-}
-
-
-var blackHolePool = sync.Pool{
-
-	New: func() interface{} {
-
-		b := make([]byte, 8192)
-
-		return &amp;b
-
-	},
-
-}
-
-
-func (devNull) ReadFrom(r io.Reader) (n int64, err error) {
-
-	bufp := blackHolePool.Get().(*[]byte)
-
-	readSize := 0
-
-	for {
-
-		readSize, err = r.Read(*bufp)
-
-		n += int64(readSize)
-
-		if err != nil {
-
-			blackHolePool.Put(bufp)
-
-			if err == io.EOF {
-
-				return n, nil
-
-			}
-
-			return
-
-		}
-
-	}
-
-}
-
-
-// Discard is an io.Writer on which all Write calls succeed
-
-// without doing anything.
-
-var Discard io.Writer = devNull(0)
+privateKey := hex.EncodeToString(key.D.Bytes())
 </code></pre>
 
-<p>使用样例，说到底这个devNull到底有什么用呢？ 模拟一个黑洞，用来吃数据，而且黑洞是接口类型，
-这个就是我能想到的仅有的解释了。</p>
+<h3 id="2-根据私钥16进制恢复地址:201e9feaaf52691e7c8e8295bf28af74">2. 根据私钥16进制恢复地址</h3>
 
-<p>说实话，我自认为对于Go的语法已经懂得的不少了，但是看到了这些package的实现，还是觉得自己
-太自已为是了。</p>
+<pre><code>key,_ := crypto.HexToECDSA(testPrivHex)
+msg := crypto.Keccak256([]byte(&quot;foo&quot;))
 
-<p><code>var Discard io.Writer = devNull(0)</code>  //这个定义以及初始化我就没这个想象力！</p>
+sig, _ := crypto.Sign(msg, key)  #利用私钥对msg进行签名，同样可以通过签名的msg来恢复公钥，从而恢复地址
 
-<p><code>var _ io.ReaderFrom = devNull(0)</code></p>
-
-<p>//这个定义又如何理解呢？ 没有定义变量，想说明什么？ 让devNull必须实现ReadFrom方法？
-//这是我能想到的唯一目的了。</p>
-
-<pre><code>    package main  
-      
-    import (  
-        &quot;fmt&quot;  
-        &quot;io&quot;  
-        &quot;io/ioutil&quot;  
-        &quot;strings&quot;  
-    )  
-      
-    func main() {  
-        a := strings.NewReader(&quot;hello&quot;)  
-        p := make([]byte, 20)  
-        io.Copy(ioutil.Discard, a)  
-        ioutil.Discard.Write(p)  
-        fmt.Println(p)　　　　　　//[0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]  
-    }  
+recoveredPub, _ := crypto.Ecrecover(msg, sig)
+pubKey := crypto.ToECDSAPub(recoveredPub)
+recoveredAddr := crypto.PubkeyToAddress(*pubKey)   #common.Address格式的地址
 </code></pre>
+
+<ul>
+<li><p>2.1由此可见， 可以通过利用私钥签名，来推断出私钥对应的公钥，进而推断出地址。</p></li>
+
+<li><p>2.2 如下方式，也可以获取到公钥和地址
+```
+recoveredPub2,  _:= crypto.SigToPub(msg, sig)</p></li>
+</ul>
+
+<p>recoveredAddr2 := crypto.PubkeyToAddress(*recoveredPub2)
+```
+** Ecrecover 和 SigToPub都可以获得公钥！！ **</p>
 
 			</div>
 

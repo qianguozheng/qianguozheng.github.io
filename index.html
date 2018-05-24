@@ -60,6 +60,8 @@
       
         <li><a href="/post/go-ethereum-create-your-own-account/"> go ethereum create your own account </a></li>
       
+        <li><a href="/post/go-ethereum-cypto-private-public-key/"> go ethereum crypto private public key </a></li>
+      
         <li><a href="/post/hugo-deploy-as-submodule-on-github/"> hugo deploy as submodule on github </a></li>
       
         <li><a href="/post/netfilter-xt_recent/"> netfilter xt_recent </a></li>
@@ -75,6 +77,52 @@
 <div class="posts">
 
       
+  <div class="post">
+    <h1 class="post-title">
+      <a href="https://qianguozheng.github.io/post/go-ethereum-cypto-private-public-key/">
+        go ethereum crypto private public key
+      </a>
+    </h1>
+
+    <span class="post-date">Thu, May 24, 2018</span>
+
+    
+
+<h3 id="1-生成ethereum地址:201e9feaaf52691e7c8e8295bf28af74">1. 生成Ethereum地址：</h3>
+
+<pre><code>key, _ := crypto.GenerateKey()
+
+address := crypto.PubkeyToAddress(key.PublicKey).Hex()
+
+privateKey := hex.EncodeToString(key.D.Bytes())
+</code></pre>
+
+<h3 id="2-根据私钥16进制恢复地址:201e9feaaf52691e7c8e8295bf28af74">2. 根据私钥16进制恢复地址</h3>
+
+<pre><code>key,_ := crypto.HexToECDSA(testPrivHex)
+msg := crypto.Keccak256([]byte(&quot;foo&quot;))
+
+sig, _ := crypto.Sign(msg, key)  #利用私钥对msg进行签名，同样可以通过签名的msg来恢复公钥，从而恢复地址
+
+recoveredPub, _ := crypto.Ecrecover(msg, sig)
+pubKey := crypto.ToECDSAPub(recoveredPub)
+recoveredAddr := crypto.PubkeyToAddress(*pubKey)   #common.Address格式的地址
+</code></pre>
+
+<ul>
+<li><p>2.1由此可见， 可以通过利用私钥签名，来推断出私钥对应的公钥，进而推断出地址。</p></li>
+
+<li><p>2.2 如下方式，也可以获取到公钥和地址
+```
+recoveredPub2,  _:= crypto.SigToPub(msg, sig)</p></li>
+</ul>
+
+<p>recoveredAddr2 := crypto.PubkeyToAddress(*recoveredPub2)
+```
+** Ecrecover 和 SigToPub都可以获得公钥！！ **</p>
+
+  </div>
+  
   <div class="post">
     <h1 class="post-title">
       <a href="https://qianguozheng.github.io/post/go-ethereum-create-your-own-account/">
