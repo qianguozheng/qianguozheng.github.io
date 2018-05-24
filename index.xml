@@ -49,7 +49,7 @@ recoveredAddr := crypto.PubkeyToAddress(*pubKey)   #common.Address格式的地�
 recoveredAddr2 := crypto.PubkeyToAddress(*recoveredPub2)
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;p&gt;** Ecrecover 和 SigToPub都可以获得公钥！！ **&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;Ecrecover 和 SigToPub都可以获得公钥！！&lt;/em&gt;&lt;/p&gt;
 </description>
     </item>
     
