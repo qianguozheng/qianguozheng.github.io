@@ -9,7 +9,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
 
   
-  <title>Golang session problem &middot; 钱国正博客</title>
+  <title>control loop at html template in golang &middot; 钱国正博客</title>
   
 
 <link rel="stylesheet" href="/css/monokai.css">
@@ -76,77 +76,60 @@
 
 		<div class="content container">
 			<div class="post">
-			 	<h1>Golang session problem</h1>
-			  <span class="post-date">Sun, Feb 19, 2017</span>
+			 	<h1>control loop at html template in golang</h1>
+			  <span class="post-date">Mon, Jul 30, 2018</span>
 			      
 
-<h1 id="golang-session-using-problem:3689b5210b345acfc0507cf19690ede1">Golang Session using problem</h1>
+<p>最近用go实现了一个管理后台，主要用来做一些路由器的配置，远程管理这些设备。</p>
 
-<p>以前从事嵌入式工作，没有做过多用户的处理，比如web服务器上后台管理人员与普通用户的区别。</p>
+<p>其中有一个功能是设计到循环的，所以采用了俄slice传递参数到html模板里面，但是这些参数是固定的，而且模板不好控制循环遍历slice, 所以写了个全局变量来控制</p>
 
-<p>最近自己在写一个认证服务器的简单管理功能，想优化下就增加了admin管理权限。</p>
+<p>样例如下，想要输出想要的，不容易控制</p>
 
-<h2 id="初步设计:3689b5210b345acfc0507cf19690ede1">初步设计</h2>
-
-<p>通过通过mux来管理路由。然后在访问/admin/路径下的API时需要检测是否登陆。</p>
-
-<h2 id="实现中遇到的问题:3689b5210b345acfc0507cf19690ede1">实现中遇到的问题</h2>
-
-<ol>
-<li>mux的具体实现不知道，需要进一步了解，今后的文章要分析透彻。</li>
-<li>google了很多的管理登陆的文章，发现都是需要在处理的API内部做判断登陆，这点我感觉繁琐了，增加一个中间件不就好了吗，但是怎么增加是一个问题。</li>
-<li>另外一个就是session的使用中遇到的了，我明明增加了session，但是就是没有收到数据。</li>
-</ol>
-
-<h2 id="中间件验证登陆解决方案:3689b5210b345acfc0507cf19690ede1">中间件验证登陆解决方案</h2>
-
-<p>通过mux建立路由，所有访问/admin/目录下的请求需要先验证是否登陆，即判断是否存在session。</p>
-
-<p>只需要</p>
-
-<pre><code>    router := mux.NewRouter()
-	adminRoutes := mux.NewRouter()
-
-	router.HandleFunc(&quot;/&quot;, index)
-
-	adminRoutes.HandleFunc(&quot;/admin/&quot;, adminIndex)
-	...
-	
-	router.PathPrefix(&quot;/admin&quot;).Handler(negroni.New(
-		NewCheckLogin(),
-		negroni.Wrap(adminRoutes),
-	))
-	// /account/login
-	router.HandleFunc(&quot;/account/login&quot;, login)
-	http.ListenAndServe(&quot;:8080&quot;, router)
+<pre><code>{{range .Slice}}
+&lt;a&gt;print anything you want&lt;/a&gt;
+{{end}}
 </code></pre>
 
-<p>negroni.New(New)eckLogin(),negroni.Wrap(adminRoutes)
-这句是进行验证的，具体原理还是需要去研究下，目前不是非常的明白。</p>
+<h2 id="实现:e6c67e8e87b403703afbcaee78be5537">实现</h2>
 
-<h2 id="session的使用比较奇怪-也是需要后续去学习领悟的地方:3689b5210b345acfc0507cf19690ede1">Session的使用比较奇怪，也是需要后续去学习领悟的地方。</h2>
+<pre><code>type FuncMap map[string]interface{}
+定义几个模板函数
+template.FuncMap {
+    &quot;var&quot;: newVar,
+    &quot;set&quot;: setVar,
+    &quot;cmp&quot;: cmpVar,
+}
+//声明模板的全局变量
+func newVar(v interface{})(*interface{}, error) {
+    x := interface{}(v)
+    return &amp;x, nil
+}
+//赋值模板的全局变量
+func setVar(x *interface{}, v interface{}) (string, error) {
+    *x = v
+    return &quot;&quot;, nil
+}
+//对比全局变量，这里和int类型对比
+func cmpVar(x *interface{}, e int) bool {
+		return (*x).(int) == e
+}
 
-<p>除go基本类型外，复杂对象结构存储必须先注册。</p>
+//使用
 
-<pre><code>import(
-        &quot;encoding/gob&quot;
-        &quot;github.com/gorilla/sessions&quot;
-    )
+{{$global_var := var 0}}
 
-    type Person struct {
-        FirstName   string
-        LastName    string
-        Email       string
-        Age         int
-    }
+{{range $k,$v := .Slice}}
+    {{if eq $v.Port 0}}
+        &lt;a&gt;print something&lt;/a&gt;
+        {{set $global_var 1}}
+    {{end}}
+    {{if cmp $global_var 1}}
+        &lt;a&gt;do another logic&lt;/a&gt;
+    {{end}}
+{{end}}
 
-    type M map[string]interface{}
 
-    func init() {
-
-        gob.Register(&amp;Person{})
-        gob.Register(&amp;M{})
-    }
 </code></pre>
 
 			</div>
